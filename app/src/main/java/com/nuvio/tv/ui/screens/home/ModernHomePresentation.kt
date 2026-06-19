@@ -20,6 +20,7 @@ internal data class ModernHomePresentationInput(
     val useLandscapePosters: Boolean,
     val showCatalogTypeSuffix: Boolean,
     val showFullReleaseDate: Boolean,
+    val showImdbRatings: Boolean,
     val localeTag: String
 )
 
@@ -50,7 +51,8 @@ internal fun buildModernHomePresentation(
                     cache.continueWatchingTitle == strContinueWatching &&
                     cache.continueWatchingAirsDateTemplate == strAirsDate &&
                     cache.continueWatchingUpcomingLabel == strUpcoming &&
-                    cache.continueWatchingUseLandscapePosters == input.useLandscapePosters
+                    cache.continueWatchingUseLandscapePosters == input.useLandscapePosters &&
+                    cache.continueWatchingShowImdbRatings == input.showImdbRatings
             val continueWatchingRow = if (reuseContinueWatchingRow) {
                 checkNotNull(cache.continueWatchingRow)
             } else {
@@ -62,6 +64,7 @@ internal fun buildModernHomePresentation(
                         buildContinueWatchingItem(
                             item = item,
                             useLandscapePosters = input.useLandscapePosters,
+                            showImdbRatings = input.showImdbRatings,
                             airsDateTemplate = strAirsDate,
                             upcomingLabel = strUpcoming,
                             context = localizedContext
@@ -74,6 +77,7 @@ internal fun buildModernHomePresentation(
             cache.continueWatchingAirsDateTemplate = strAirsDate
             cache.continueWatchingUpcomingLabel = strUpcoming
             cache.continueWatchingUseLandscapePosters = input.useLandscapePosters
+            cache.continueWatchingShowImdbRatings = input.showImdbRatings
             cache.continueWatchingRow = continueWatchingRow
             add(continueWatchingRow)
         } else {
@@ -98,6 +102,7 @@ internal fun buildModernHomePresentation(
                             cached.source == row &&
                             cached.useLandscapePosters == input.useLandscapePosters &&
                             cached.showCatalogTypeSuffix == input.showCatalogTypeSuffix &&
+                            cached.showImdbRatings == input.showImdbRatings &&
                             cached.localeTag == currentLocaleTag
 
                     val mappedRow = if (canReuseMappedRow) {
@@ -133,7 +138,8 @@ internal fun buildModernHomePresentation(
                                 if (cachedItem != null &&
                                     cachedItem.source == item &&
                                     cachedItem.useLandscapePosters == input.useLandscapePosters &&
-                                    cachedItem.showFullReleaseDate == input.showFullReleaseDate
+                                    cachedItem.showFullReleaseDate == input.showFullReleaseDate &&
+                                    cachedItem.showImdbRatings == input.showImdbRatings
                                 ) {
                                     cachedItem.carouselItem.let { cached ->
                                         val stableItemKey = row.stableItemKey(itemIndex, item)
@@ -149,12 +155,14 @@ internal fun buildModernHomePresentation(
                                         strTypeMovie = strTypeMovie,
                                         strTypeSeries = strTypeSeries,
                                         showFullReleaseDate = input.showFullReleaseDate,
+                                        showImdbRatings = input.showImdbRatings,
                                         previousCachedItem = cachedItem?.carouselItem
                                     ).copy(key = row.stableItemKey(itemIndex, item))
                                     rowItemCache[cacheKey] = CachedCarouselItem(
                                         source = item,
                                         useLandscapePosters = input.useLandscapePosters,
                                         showFullReleaseDate = input.showFullReleaseDate,
+                                        showImdbRatings = input.showImdbRatings,
                                         carouselItem = built
                                     )
                                     built
@@ -167,6 +175,7 @@ internal fun buildModernHomePresentation(
                         source = row,
                         useLandscapePosters = input.useLandscapePosters,
                         showCatalogTypeSuffix = input.showCatalogTypeSuffix,
+                        showImdbRatings = input.showImdbRatings,
                         localeTag = currentLocaleTag,
                         mappedRow = mappedRow
                     )

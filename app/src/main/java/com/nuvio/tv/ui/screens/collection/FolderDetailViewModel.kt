@@ -494,6 +494,7 @@ class FolderDetailViewModel @Inject constructor(
                         useLandscapePosters = state.modernLandscapePostersEnabled,
                         showCatalogTypeSuffix = state.catalogTypeSuffixEnabled,
                         showFullReleaseDate = state.showFullReleaseDate,
+                        showImdbRatings = true,
                         localeTag = com.nuvio.tv.LocaleCache.localeTag
                     ),
                     cache = modernCarouselRowBuildCache,
