@@ -249,7 +249,7 @@ private class NuvioAssTrackOutput(
         return cmf and 0x0F == 8 && ((cmf shl 8) + flg) % 31 == 0
     }
 
-    private fun maybeInflate(offset: Int, length: Int): ByteArray? {
+    private fun ByteArray.maybeInflate(offset: Int, length: Int): ByteArray? {
         val inflater = Inflater()
         return try {
             inflater.setInput(this, offset, length)
