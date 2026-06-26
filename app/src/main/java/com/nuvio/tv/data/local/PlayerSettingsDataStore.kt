@@ -234,6 +234,7 @@ data class PlayerSettings(
     val secondaryPreferredAudioLanguage: String? = null,
     val loadingOverlayEnabled: Boolean = true,
     val showPlayerLoadingStatus: Boolean = true,
+    val playbackIssueReportsEnabled: Boolean = false,
     val pauseOverlayEnabled: Boolean = true,
     val osdClockEnabled: Boolean = true,
     val skipIntroEnabled: Boolean = true,
@@ -272,6 +273,7 @@ data class PlayerSettings(
     val streamReuseLastLinkEnabled: Boolean = false,
     val streamReuseLastLinkCacheHours: Int = 24,
     val externalPlayerForwardSubtitles: Boolean = false,
+    val externalPlayerSendSkipSegments: Boolean = false,
     val subtitleOrganizationMode: SubtitleOrganizationMode = SubtitleOrganizationMode.NONE,
 
     // Networking
@@ -475,6 +477,7 @@ class PlayerSettingsDataStore @Inject constructor(
     private val secondaryPreferredAudioLanguageKey = stringPreferencesKey("secondary_preferred_audio_language")
     private val loadingOverlayEnabledKey = booleanPreferencesKey("loading_overlay_enabled")
     private val showPlayerLoadingStatusKey = booleanPreferencesKey("show_player_loading_status")
+    private val playbackIssueReportsEnabledKey = booleanPreferencesKey("playback_issue_reports_enabled")
     private val pauseOverlayEnabledKey = booleanPreferencesKey("pause_overlay_enabled")
     private val osdClockEnabledKey = booleanPreferencesKey("osd_clock_enabled")
     private val skipIntroEnabledKey = booleanPreferencesKey("skip_intro_enabled")
@@ -515,6 +518,7 @@ class PlayerSettingsDataStore @Inject constructor(
     private val streamReuseLastLinkEnabledKey = booleanPreferencesKey("stream_reuse_last_link_enabled")
     private val streamReuseLastLinkCacheHoursKey = intPreferencesKey("stream_reuse_last_link_cache_hours")
     private val externalPlayerForwardSubtitlesKey = booleanPreferencesKey("external_player_forward_subtitles")
+    private val externalPlayerSendSkipSegmentsKey = booleanPreferencesKey("external_player_send_skip_segments")
     private val subtitleOrganizationModeKey = stringPreferencesKey("subtitle_organization_mode")
 
     // Network Keys
@@ -821,6 +825,7 @@ class PlayerSettingsDataStore @Inject constructor(
                     ?.let(::normalizeSecondaryAudioLanguageCode),
                 loadingOverlayEnabled = prefs[loadingOverlayEnabledKey] ?: true,
                 showPlayerLoadingStatus = prefs[showPlayerLoadingStatusKey] ?: true,
+                playbackIssueReportsEnabled = prefs[playbackIssueReportsEnabledKey] ?: false,
                 pauseOverlayEnabled = prefs[pauseOverlayEnabledKey] ?: true,
                 osdClockEnabled = prefs[osdClockEnabledKey] ?: true,
                 skipIntroEnabled = prefs[skipIntroEnabledKey] ?: true,
@@ -888,6 +893,7 @@ class PlayerSettingsDataStore @Inject constructor(
                 streamReuseLastLinkEnabled = prefs[streamReuseLastLinkEnabledKey] ?: false,
                 streamReuseLastLinkCacheHours = (prefs[streamReuseLastLinkCacheHoursKey] ?: 24).coerceIn(1, 168),
                 externalPlayerForwardSubtitles = prefs[externalPlayerForwardSubtitlesKey] ?: false,
+                externalPlayerSendSkipSegments = prefs[externalPlayerSendSkipSegmentsKey] ?: false,
                 subtitleOrganizationMode = parseSubtitleOrganizationMode(prefs[subtitleOrganizationModeKey]),
                 vodCacheEnabled = prefs[vodCacheEnabledKey] ?: PlayerSettings.DEFAULT_VOD_CACHE_ENABLED,
                 vodCacheSizeMode = prefs[vodCacheSizeModeKey]?.let {
@@ -1137,6 +1143,12 @@ class PlayerSettingsDataStore @Inject constructor(
         }
     }
 
+    suspend fun setPlaybackIssueReportsEnabled(enabled: Boolean) {
+        store().edit { prefs ->
+            prefs[playbackIssueReportsEnabledKey] = enabled
+        }
+    }
+
     suspend fun setFrameRateMatchingMode(mode: FrameRateMatchingMode) {
         store().edit { prefs ->
             prefs[frameRateMatchingModeKey] = mode.name
@@ -1276,6 +1288,12 @@ class PlayerSettingsDataStore @Inject constructor(
     suspend fun setExternalPlayerForwardSubtitles(enabled: Boolean) {
         store().edit { prefs ->
             prefs[externalPlayerForwardSubtitlesKey] = enabled
+        }
+    }
+
+    suspend fun setExternalPlayerSendSkipSegments(enabled: Boolean) {
+        store().edit { prefs ->
+            prefs[externalPlayerSendSkipSegmentsKey] = enabled
         }
     }
 
