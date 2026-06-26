@@ -235,8 +235,7 @@ private class NuvioAssTrackOutput(
     private fun ByteArray.dialoguePayload(offset: Int, limit: Int): ByteArray {
         if (offset >= limit) return EMPTY_BYTE_ARRAY
         val boundedLimit = limit.coerceIn(offset, size)
-        val rawEnd = if (looksLikeZlib(offset, boundedLimit)) size else boundedLimit
-        val rawPayload = copyOfRange(offset, rawEnd)
+        val rawPayload = copyOfRange(offset, boundedLimit)
         return maybeInflate(rawPayload)
     }
 
