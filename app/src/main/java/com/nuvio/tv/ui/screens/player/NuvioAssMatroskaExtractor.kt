@@ -183,15 +183,16 @@ private class NuvioAssTrackOutput(
     ) {
         if (isAss && timeUs.isValidTs) {
             val sample = extractor.subtitleSample
-            val endIndex = findTokenIndex(sample.data, 1)
-            val lineIndex = findTokenIndex(sample.data, 2)
+            val sampleLimit = sample.limit()
+            val endIndex = findTokenIndex(sample.data, 1, sampleLimit)
+            val lineIndex = findTokenIndex(sample.data, 2, sampleLimit)
             if (endIndex > 0 && lineIndex > endIndex) {
                 val rawDuration = sample.data.decodeToString(endIndex, lineIndex - 1)
                 val durationUs = parseTimecodeUs(rawDuration)
                 if (durationUs.isValidTs) {
                     val dialogue = sample.data.dialoguePayload(
                         offset = lineIndex,
-                        limit = sample.limit()
+                        limit = sampleLimit
                     )
 
                     assHandler.readTrackDialogue(
@@ -220,11 +221,11 @@ private class NuvioAssTrackOutput(
         return timestampUs
     }
 
-    private fun findTokenIndex(array: ByteArray, tokenNumber: Int): Int {
+    private fun findTokenIndex(array: ByteArray, tokenNumber: Int, limit: Int = array.size): Int {
         if (tokenNumber == 0) return 0
         var tokensFound = 0
-        array.forEachIndexed { index, byte ->
-            if (byte == COMMA && ++tokensFound == tokenNumber) {
+        for (index in 0 until limit) {
+            if (array[index] == COMMA && ++tokensFound == tokenNumber) {
                 return index + 1
             }
         }
@@ -232,9 +233,9 @@ private class NuvioAssTrackOutput(
     }
 
     private fun ByteArray.dialoguePayload(offset: Int, limit: Int): ByteArray {
-        if (offset >= size) return EMPTY_BYTE_ARRAY
+        if (offset >= limit) return EMPTY_BYTE_ARRAY
         val boundedLimit = limit.coerceIn(offset, size)
-        val rawEnd = if (looksLikeZlib(offset, size)) size else boundedLimit
+        val rawEnd = if (looksLikeZlib(offset, boundedLimit)) size else boundedLimit
         val rawPayload = copyOfRange(offset, rawEnd)
         return maybeInflate(rawPayload)
     }
