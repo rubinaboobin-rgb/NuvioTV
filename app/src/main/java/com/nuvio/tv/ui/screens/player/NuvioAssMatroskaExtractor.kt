@@ -234,14 +234,10 @@ private class NuvioAssTrackOutput(
 
     private fun ByteArray.dialoguePayload(offset: Int, limit: Int): ByteArray {
         if (offset >= limit) return EMPTY_BYTE_ARRAY
-        
-        val capacityPayload = copyOfRange(offset, size)
-        val inflated = maybeInflate(capacityPayload)
-        
-        if (inflated !== capacityPayload) {
-            return inflated
+        if (looksLikeZlib(offset, limit)) {
+            val inflated = maybeInflate(offset, size - offset)
+            if (inflated != null) return inflated
         }
-        
         val boundedLimit = limit.coerceIn(offset, size)
         return copyOfRange(offset, boundedLimit)
     }
@@ -253,13 +249,11 @@ private class NuvioAssTrackOutput(
         return cmf and 0x0F == 8 && ((cmf shl 8) + flg) % 31 == 0
     }
 
-    private fun maybeInflate(data: ByteArray): ByteArray {
-        if (!data.looksLikeZlib(offset = 0, limit = data.size)) return data
-
+    private fun maybeInflate(offset: Int, length: Int): ByteArray? {
         val inflater = Inflater()
         return try {
-            inflater.setInput(data)
-            val output = ByteArrayOutputStream(data.size * 4)
+            inflater.setInput(this, offset, length)
+            val output = ByteArrayOutputStream(length * 4)
             val buffer = ByteArray(INFLATE_BUFFER_SIZE)
             while (!inflater.finished()) {
                 val count = inflater.inflate(buffer)
@@ -272,9 +266,9 @@ private class NuvioAssTrackOutput(
                 }
             }
             val inflated = output.toByteArray()
-            if (inflater.finished() && inflated.isNotEmpty()) inflated else data
+            if (inflater.finished() && inflated.isNotEmpty()) inflated else null
         } catch (_: DataFormatException) {
-            data
+            null
         } finally {
             inflater.end()
         }
