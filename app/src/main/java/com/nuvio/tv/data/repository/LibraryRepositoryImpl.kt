@@ -60,9 +60,9 @@ class LibraryRepositoryImpl @Inject constructor(
     var hasCompletedInitialPull = false
 
     private fun triggerRemoteSync() {
-        // Skip if already syncing from remote, initial pull not complete, or not authenticated
+        // Skip if already syncing from remote or not authenticated.
+        // Local library changes should not get stranded if the startup pull failed.
         if (isSyncingFromRemote) return
-        if (!hasCompletedInitialPull) return
         if (!authManager.isAuthenticated) return
         syncJob?.cancel()
         syncJob = syncScope.launch {

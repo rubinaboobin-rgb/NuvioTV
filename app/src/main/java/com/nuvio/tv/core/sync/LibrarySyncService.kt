@@ -42,11 +42,6 @@ class LibrarySyncService @Inject constructor(
     suspend fun pushToRemote(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val items = libraryPreferences.getAllItems()
-            
-            // Nothing to sync
-            if (items.isEmpty()) {
-                return@withContext Result.success(Unit)
-            }
 
             val profileId = profileManager.activeProfileId.value
             val params = buildJsonObject {

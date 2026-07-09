@@ -155,7 +155,9 @@ class AccountViewModel @Inject constructor(
                     pullRemoteData().onFailure { e ->
                         Log.e("AccountViewModel", "signIn: pullRemoteData failed, continuing signed-in flow", e)
                     }
+                    pushLocalDataToRemote()
                     loadConnectedStats()
+                    loadSyncOverview()
                     _uiState.update { it.copy(isLoading = false) }
                 },
                 onFailure = { e ->
@@ -747,10 +749,12 @@ class AccountViewModel @Inject constructor(
                     onSuccess = { remoteLibraryItems ->
                         Log.d("AccountViewModel", "pullRemoteData: pulled ${remoteLibraryItems.size} library items")
                         libraryPreferences.mergeRemoteItems(remoteLibraryItems)
+                        libraryRepository.hasCompletedInitialPull = true
                         Log.d("AccountViewModel", "pullRemoteData: reconciled local library with ${remoteLibraryItems.size} remote items")
                     },
                     onFailure = { e ->
                         Log.e("AccountViewModel", "pullRemoteData: failed to pull library items", e)
+                        libraryRepository.hasCompletedInitialPull = true
                     }
                 )
                 libraryRepository.isSyncingFromRemote = false
