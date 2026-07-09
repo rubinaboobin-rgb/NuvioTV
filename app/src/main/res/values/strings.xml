@@ -1766,6 +1766,8 @@
     <string name="auth_signin_create_button">Create Account</string>
     <string name="auth_signin_back_button">Back</string>
     <string name="auth_signin_working">Please wait...</string>
+    <string name="auth_signin_tv_disabled">Use email and password to sign in on this TV.</string>
+    <string name="auth_signin_qr_btn">Continue</string>
 
     <string name="auth_qr_title">Sign In With QR</string>
     <string name="auth_qr_account_login">Account Login</string>
