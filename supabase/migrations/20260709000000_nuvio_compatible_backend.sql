@@ -187,6 +187,15 @@ create table if not exists public.profile_settings_blobs (
   primary key (user_id, profile_id, platform)
 );
 
+create table if not exists public.provider_credentials (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  profile_id integer not null default 1,
+  provider text not null,
+  credential_json jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, profile_id, provider)
+);
+
 create table if not exists public.sync_codes (
   owner_id uuid primary key references auth.users(id) on delete cascade,
   code text not null unique,
@@ -232,6 +241,7 @@ create index if not exists idx_watch_progress_events_owner_cursor on public.watc
 create index if not exists idx_watched_items_user_profile on public.watched_items(user_id, profile_id, watched_at desc);
 create index if not exists idx_watched_item_events_owner_cursor on public.watched_item_events(user_id, profile_id, event_id);
 create index if not exists idx_tv_login_requester on public.tv_login_sessions(requester_user_id, code);
+create index if not exists idx_provider_credentials_user_profile on public.provider_credentials(user_id, profile_id, provider);
 
 drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at before update on public.profiles
@@ -344,6 +354,7 @@ alter table public.watched_item_events enable row level security;
 alter table public.collections enable row level security;
 alter table public.home_catalog_settings enable row level security;
 alter table public.profile_settings_blobs enable row level security;
+alter table public.provider_credentials enable row level security;
 alter table public.sync_codes enable row level security;
 alter table public.avatar_catalog enable row level security;
 alter table public.tv_login_sessions enable row level security;
@@ -499,7 +510,7 @@ begin
 end;
 $$;
 
-create or replace function public.sync_push_plugins(p_plugins jsonb, p_profile_id integer default 1)
+create or replace function public.sync_push_plugins(p_plugins jsonb, p_profile_id integer default 1, p_origin_client_id text default null)
 returns void
 language plpgsql
 security definer
@@ -526,7 +537,7 @@ begin
 end;
 $$;
 
-create or replace function public.sync_push_addons(p_addons jsonb, p_profile_id integer default 1)
+create or replace function public.sync_push_addons(p_addons jsonb, p_profile_id integer default 1, p_origin_client_id text default null)
 returns void
 language plpgsql
 security definer
@@ -552,7 +563,7 @@ begin
 end;
 $$;
 
-create or replace function public.sync_push_library(p_items jsonb, p_profile_id integer default 1)
+create or replace function public.sync_push_library(p_items jsonb, p_profile_id integer default 1, p_origin_client_id text default null)
 returns void
 language plpgsql
 security definer
@@ -622,7 +633,7 @@ as $$
   offset greatest(coalesce(p_offset, 0), 0);
 $$;
 
-create or replace function public.sync_push_watch_progress(p_entries jsonb, p_profile_id integer default 1)
+create or replace function public.sync_push_watch_progress(p_entries jsonb, p_profile_id integer default 1, p_origin_client_id text default null)
 returns void
 language plpgsql
 security definer
@@ -715,7 +726,7 @@ as $$
   limit coalesce(p_limit, 2147483647);
 $$;
 
-create or replace function public.sync_delete_watch_progress(p_keys jsonb, p_profile_id integer default 1)
+create or replace function public.sync_delete_watch_progress(p_keys jsonb, p_profile_id integer default 1, p_origin_client_id text default null)
 returns void
 language plpgsql
 security definer
@@ -797,7 +808,7 @@ as $$
   limit greatest(coalesce(p_limit, 900), 1);
 $$;
 
-create or replace function public.sync_push_watched_items(p_items jsonb, p_profile_id integer default 1)
+create or replace function public.sync_push_watched_items(p_items jsonb, p_profile_id integer default 1, p_origin_client_id text default null)
 returns void
 language plpgsql
 security definer
@@ -869,7 +880,7 @@ as $$
   offset greatest(coalesce(p_page, 1) - 1, 0) * greatest(coalesce(p_page_size, 900), 1);
 $$;
 
-create or replace function public.sync_delete_watched_items(p_keys jsonb, p_profile_id integer default 1)
+create or replace function public.sync_delete_watched_items(p_keys jsonb, p_profile_id integer default 1, p_origin_client_id text default null)
 returns void
 language plpgsql
 security definer
@@ -946,7 +957,7 @@ as $$
   limit greatest(coalesce(p_limit, 900), 1);
 $$;
 
-create or replace function public.sync_push_profiles(p_profiles jsonb, p_client_max_profiles integer default 5)
+create or replace function public.sync_push_profiles(p_profiles jsonb, p_client_max_profiles integer default 5, p_origin_client_id text default null)
 returns void
 language plpgsql
 security definer
@@ -1021,7 +1032,7 @@ as $$
   order by p.profile_index asc;
 $$;
 
-create or replace function public.sync_delete_profile_data(p_profile_id integer)
+create or replace function public.sync_delete_profile_data(p_profile_id integer, p_origin_client_id text default null)
 returns void
 language plpgsql
 security definer
@@ -1166,7 +1177,7 @@ begin
 end;
 $$;
 
-create or replace function public.sync_push_profile_settings_blob(p_profile_id integer, p_settings_json jsonb, p_platform text default 'tv')
+create or replace function public.sync_push_profile_settings_blob(p_profile_id integer, p_settings_json jsonb, p_platform text default 'tv', p_origin_client_id text default null)
 returns void
 language sql
 security definer
@@ -1193,7 +1204,67 @@ as $$
   limit 1;
 $$;
 
-create or replace function public.sync_push_collections(p_profile_id integer, p_collections_json jsonb)
+create or replace function public.sync_push_provider_credentials(p_profile_id integer, p_credentials jsonb, p_origin_client_id text default null)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_owner uuid := public.require_sync_owner();
+  v_item jsonb;
+  v_provider text;
+begin
+  delete from public.provider_credentials
+  where user_id = v_owner
+    and profile_id = p_profile_id;
+
+  for v_item in select value from jsonb_array_elements(coalesce(p_credentials, '[]'::jsonb))
+  loop
+    v_provider := nullif(trim(coalesce(v_item->>'provider', '')), '');
+    if v_provider is not null then
+      insert into public.provider_credentials(user_id, profile_id, provider, credential_json, updated_at)
+      values (
+        v_owner,
+        p_profile_id,
+        v_provider,
+        coalesce(v_item->'credential_json', '{}'::jsonb),
+        now()
+      )
+      on conflict (user_id, profile_id, provider) do update
+        set credential_json = excluded.credential_json,
+            updated_at = excluded.updated_at;
+    end if;
+  end loop;
+end;
+$$;
+
+create or replace function public.sync_pull_provider_credentials(p_profile_id integer)
+returns table(provider text, credential_json jsonb, updated_at timestamptz)
+language sql
+security definer
+set search_path = public
+as $$
+  select pc.provider, pc.credential_json, pc.updated_at
+  from public.provider_credentials pc
+  where pc.user_id = public.require_sync_owner()
+    and pc.profile_id = p_profile_id
+  order by pc.provider asc;
+$$;
+
+create or replace function public.sync_delete_provider_credentials(p_profile_id integer, p_provider text, p_origin_client_id text default null)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  delete from public.provider_credentials
+  where user_id = public.require_sync_owner()
+    and profile_id = p_profile_id
+    and provider = p_provider;
+$$;
+
+create or replace function public.sync_push_collections(p_profile_id integer, p_collections_json jsonb, p_origin_client_id text default null)
 returns void
 language sql
 security definer
@@ -1219,7 +1290,7 @@ as $$
   limit 1;
 $$;
 
-create or replace function public.sync_push_home_catalog_settings(p_profile_id integer, p_settings_json jsonb, p_platform text default 'home_catalog_shared')
+create or replace function public.sync_push_home_catalog_settings(p_profile_id integer, p_settings_json jsonb, p_platform text default 'home_catalog_shared', p_origin_client_id text default null)
 returns void
 language sql
 security definer
