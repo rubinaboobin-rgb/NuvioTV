@@ -53,6 +53,8 @@ SUPABASE_SERVICE_ROLE_KEY
 
 Supabase normally provides these automatically to hosted Edge Functions. If you run locally, set them yourself.
 
+For current Supabase projects, use a Publishable key (`sb_publishable_...`) in client apps. Secret keys (`sb_secret_...`) and legacy `service_role` keys are backend-only and must never be bundled into the Android app.
+
 ## TV Login Page
 
 `supabase/web/tv-login.html` is a minimal phone/browser login page. Before hosting it, replace:
@@ -62,7 +64,7 @@ __SUPABASE_URL__
 __SUPABASE_ANON_KEY__
 ```
 
-with your project URL and anon key.
+with your project URL and Publishable key.
 
 Host the file anywhere HTTPS-accessible, for example:
 
@@ -80,7 +82,7 @@ For local builds, create `local.properties`:
 
 ```properties
 SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+SUPABASE_ANON_KEY=YOUR_SUPABASE_PUBLISHABLE_KEY
 AVATAR_PUBLIC_BASE_URL=https://YOUR_PROJECT_REF.supabase.co/storage/v1/object/public/avatars
 SYNC_BACKEND_MANIFEST_URL=
 TV_LOGIN_WEB_BASE_URL=https://your-domain.example/tv-login
@@ -94,13 +96,15 @@ base64 -w 0 local.properties
 
 The app's default selected backend is `hosted`, and `hosted` maps to `SUPABASE_URL` / `SUPABASE_ANON_KEY`. Leaving `SYNC_BACKEND_MANIFEST_URL` blank prevents a remote manifest from switching the app back to another built-in backend.
 
+The property is still named `SUPABASE_ANON_KEY` because that is what the Android code already reads. For new Supabase projects, put the current `sb_publishable_...` key there.
+
 ## Optional Nuvio Backend Slot
 
 The app also has a second built-in backend ID named `nuvio`. If you want debug builds to switch between two custom projects, set:
 
 ```properties
 NUVIO_SUPABASE_URL=https://SECOND_PROJECT.supabase.co
-NUVIO_SUPABASE_ANON_KEY=SECOND_PROJECT_ANON_KEY
+NUVIO_SUPABASE_ANON_KEY=SECOND_PROJECT_PUBLISHABLE_KEY
 NUVIO_AVATAR_PUBLIC_BASE_URL=https://SECOND_PROJECT.supabase.co/storage/v1/object/public/avatars
 ```
 

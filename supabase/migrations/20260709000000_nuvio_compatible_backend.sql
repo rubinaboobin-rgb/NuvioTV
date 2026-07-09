@@ -695,7 +695,7 @@ returns table(
   video_id text,
   season integer,
   episode integer,
-  position bigint,
+  "position" bigint,
   duration bigint,
   last_watched bigint,
   progress_key text,
@@ -779,7 +779,7 @@ returns table(
   video_id text,
   season integer,
   episode integer,
-  position bigint,
+  "position" bigint,
   duration bigint,
   last_watched bigint
 )
