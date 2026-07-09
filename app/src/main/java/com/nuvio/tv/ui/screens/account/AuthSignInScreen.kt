@@ -25,12 +25,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
@@ -86,14 +86,6 @@ fun AuthSignInScreen(
                 color = NuvioTheme.colors.TextSecondary,
                 textAlign = TextAlign.Center
             )
-            if (uiState.debugBackendSwitchEnabled) {
-                Spacer(modifier = Modifier.height(18.dp))
-                DebugSyncBackendSwitchCard(
-                    uiState = uiState,
-                    requireConfirmation = false,
-                    onSwitchBackend = viewModel::switchDebugBackend
-                )
-            }
             Spacer(modifier = Modifier.height(22.dp))
 
             InputField(

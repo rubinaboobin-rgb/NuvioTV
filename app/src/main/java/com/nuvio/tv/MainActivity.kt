@@ -118,7 +118,6 @@ import coil3.request.ImageRequest
 import com.nuvio.tv.R
 import com.nuvio.tv.core.auth.AuthManager
 import com.nuvio.tv.core.build.AppFeaturePolicy
-import com.nuvio.tv.core.network.SyncBackendSwitchService
 import com.nuvio.tv.core.profile.ProfileManager
 import com.nuvio.tv.core.sync.ProfileSettingsSyncService
 import com.nuvio.tv.core.sync.ProfileSyncService
@@ -136,6 +135,7 @@ import com.nuvio.tv.domain.model.AppTheme
 import com.nuvio.tv.domain.model.AuthState
 import com.nuvio.tv.domain.model.DiscoverLocation
 import com.nuvio.tv.domain.model.ExperienceMode
+import com.nuvio.tv.domain.model.SettingsUiStyle
 import com.nuvio.tv.domain.repository.AddonRepository
 import com.nuvio.tv.ui.components.NuvioScrollDefaults
 import com.nuvio.tv.ui.components.ProfileAvatarCircle
@@ -191,7 +191,8 @@ private data class MainUiPrefs(
     val discoverLocation: DiscoverLocation? = null,
     val smoothBringIntoViewEnabled: Boolean = true,
     val fastHorizontalNavigationEnabled: Boolean = false,
-    val composeHighlighterEnabled: Boolean = false
+    val composeHighlighterEnabled: Boolean = false,
+    val settingsUiStyle: SettingsUiStyle = SettingsUiStyle.CLASSIC
 )
 
 @AndroidEntryPoint
@@ -214,9 +215,6 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var startupSyncService: StartupSyncService
-
-    @Inject
-    lateinit var syncBackendSwitchService: SyncBackendSwitchService
 
     @Inject
     lateinit var androidTvChannelSyncService: com.nuvio.tv.core.sync.androidtv.AndroidTvChannelSyncService
@@ -290,9 +288,6 @@ class MainActivity : ComponentActivity() {
         externalPlaybackTracker.activityLauncher = externalPlayerLauncher
 
         PluginRuntimeHooks.onActivityCreate(this)
-        lifecycleScope.launch {
-            syncBackendSwitchService.refreshSelection()
-        }
 
         window?.decorView?.post {
             val snapshot = com.nuvio.tv.core.player.DisplayCapabilities.detect(this)
@@ -415,12 +410,14 @@ class MainActivity : ComponentActivity() {
                     layoutPreferenceDataStore.smoothBringIntoViewEnabled,
                     layoutPreferenceDataStore.fastHorizontalNavigationEnabled,
                     layoutPreferenceDataStore.composeHighlighterEnabled,
-                ) { addonSetupSkipped, smoothBringIntoView, fastHorizontalNav, composeHighlighter ->
+                    themeDataStore.settingsUiStyle,
+                ) { addonSetupSkipped, smoothBringIntoView, fastHorizontalNav, composeHighlighter, settingsUiStyle ->
                     MainUiPrefs(
                         addonSetupSkipped = addonSetupSkipped,
                         smoothBringIntoViewEnabled = smoothBringIntoView,
                         fastHorizontalNavigationEnabled = fastHorizontalNav,
                         composeHighlighterEnabled = composeHighlighter,
+                        settingsUiStyle = settingsUiStyle,
                     )
                 }
                 combine(themeAndExperienceFlow, layoutAndFeaturesFlow, extraFeaturesFlow) { themePrefs, layoutPrefs, extraPrefs ->
@@ -434,6 +431,7 @@ class MainActivity : ComponentActivity() {
                         smoothBringIntoViewEnabled = extraPrefs.smoothBringIntoViewEnabled,
                         fastHorizontalNavigationEnabled = extraPrefs.fastHorizontalNavigationEnabled,
                         composeHighlighterEnabled = extraPrefs.composeHighlighterEnabled,
+                        settingsUiStyle = extraPrefs.settingsUiStyle,
                     )
                 }
             }
@@ -447,7 +445,8 @@ class MainActivity : ComponentActivity() {
                 appTheme = mainUiPrefs.theme,
                 appFont = mainUiPrefs.font,
                 amoledMode = mainUiPrefs.amoledMode,
-                amoledSurfacesMode = mainUiPrefs.amoledSurfacesMode
+                amoledSurfacesMode = mainUiPrefs.amoledSurfacesMode,
+                settingsUiStyle = mainUiPrefs.settingsUiStyle
             ) {
                 val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
                 val bringIntoViewSpec = if (mainUiPrefs.smoothBringIntoViewEnabled) {
@@ -785,9 +784,8 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         if (::jankStats.isInitialized) jankStats.isTrackingEnabled = true
+        startupSyncService.requestForegroundSync()
         lifecycleScope.launch {
-            syncBackendSwitchService.refreshSelection()
-            startupSyncService.requestForegroundSync()
             if (isFirstResumeAfterCreate) {
                 isFirstResumeAfterCreate = false
                 traktProgressService.invalidateAndRefresh()
@@ -825,15 +823,14 @@ class MainActivity : ComponentActivity() {
         // tracked; onActivityResult keeps it for a completion or dismisses it otherwise.
         externalPlaybackTracker.raiseAutoNextOverlayOnReturn()
         super.onStart()
-        lifecycleScope.launch {
-            syncBackendSwitchService.refreshSelection()
-            profileSettingsSyncService.requestForegroundPull()
-        }
+        startupSyncService.startPeriodicSurfacePulls()
+        profileSettingsSyncService.requestForegroundPull()
         androidTvChannelSyncService.onForegroundChanged(true)
     }
 
     override fun onStop() {
         super.onStop()
+        startupSyncService.stopPeriodicSurfacePulls()
         // App going to background (e.g. user returning to the launcher): reconcile the
         // Continue Watching channel once so Projectivy repaints it with fresh progress.
         androidTvChannelSyncService.onForegroundChanged(false)
