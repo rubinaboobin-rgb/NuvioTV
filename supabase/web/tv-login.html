@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nuvio TV Login</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #101418; color: #f5f7fa; }
+    main { width: min(420px, calc(100vw - 32px)); }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    p { color: #b8c0cc; line-height: 1.5; }
+    form { display: grid; gap: 12px; margin-top: 24px; }
+    label { display: grid; gap: 6px; color: #dbe2ea; font-size: 14px; }
+    input, button { border-radius: 8px; border: 1px solid #34404c; padding: 12px 14px; font: inherit; }
+    input { background: #151b22; color: #f5f7fa; }
+    button { border-color: #5db7ff; background: #2f9bed; color: #06111c; font-weight: 700; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: default; }
+    #status { min-height: 24px; margin-top: 18px; color: #dbe2ea; }
+    .error { color: #ff8b8b; }
+    .success { color: #80e6a3; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Nuvio TV Login</h1>
+    <p>Sign in to approve the TV login code.</p>
+    <form id="login-form">
+      <label>
+        Email
+        <input id="email" type="email" autocomplete="email" required>
+      </label>
+      <label>
+        Password
+        <input id="password" type="password" autocomplete="current-password" required>
+      </label>
+      <button id="submit" type="submit">Approve TV Login</button>
+    </form>
+    <div id="status"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = window.NUVIO_SUPABASE_URL || "__SUPABASE_URL__";
+    const SUPABASE_ANON_KEY = window.NUVIO_SUPABASE_ANON_KEY || "__SUPABASE_ANON_KEY__";
+    const APPROVE_FUNCTION_URL = window.NUVIO_APPROVE_FUNCTION_URL || `${SUPABASE_URL}/functions/v1/tv-logins-approve`;
+    const code = new URLSearchParams(location.search).get("code");
+    const statusEl = document.getElementById("status");
+    const submitEl = document.getElementById("submit");
+
+    function setStatus(message, type) {
+      statusEl.textContent = message;
+      statusEl.className = type || "";
+    }
+
+    if (!code) {
+      submitEl.disabled = true;
+      setStatus("Missing TV login code.", "error");
+    } else if (SUPABASE_URL.includes("__") || SUPABASE_ANON_KEY.includes("__")) {
+      submitEl.disabled = true;
+      setStatus("This page needs Supabase configuration before it can be used.", "error");
+    }
+
+    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    document.getElementById("login-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      submitEl.disabled = true;
+      setStatus("Signing in...");
+
+      try {
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const { data, error } = await client.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        const session = data.session;
+        if (!session?.access_token || !session?.refresh_token) {
+          throw new Error("No Supabase session returned.");
+        }
+
+        setStatus("Approving TV...");
+        const response = await fetch(APPROVE_FUNCTION_URL, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "authorization": `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            code,
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+            token_type: session.token_type || "bearer",
+            expires_in: session.expires_in || null,
+          }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(result.error || `Approval failed with HTTP ${response.status}`);
+        }
+
+        setStatus("Approved. You can return to your TV.", "success");
+      } catch (error) {
+        submitEl.disabled = false;
+        setStatus(error.message || String(error), "error");
+      }
+    });
+  </script>
+</body>
+</html>

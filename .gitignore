@@ -41,7 +41,14 @@ backups/
 .supabase_db.env
 scripts/*
 !scripts/release_beta.py
-/supabase
+/supabase/*
+!/supabase/config.toml
+!/supabase/functions/
+!/supabase/functions/**
+!/supabase/migrations/
+!/supabase/migrations/**
+!/supabase/web/
+!/supabase/web/**
 tv-samples
 HOME_UI_OPTIMIZATION_NOTES.local.md
 .kotlin/
@@ -49,5 +56,6 @@ bugs/
 avatars/
 logs
 AGENTS.md
-docs/
+docs/*
+!docs/custom-backend.md
 status-page/

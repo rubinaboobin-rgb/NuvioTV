@@ -141,7 +141,6 @@ import com.nuvio.tv.ui.components.NuvioScrollDefaults
 import com.nuvio.tv.ui.components.ProfileAvatarCircle
 import com.nuvio.tv.ui.navigation.NuvioNavHost
 import com.nuvio.tv.ui.navigation.Screen
-import com.nuvio.tv.ui.screens.account.AuthQrSignInScreen
 import com.nuvio.tv.ui.screens.addon.EssentialAddonSetupScreen
 import com.nuvio.tv.ui.screens.profile.ProfileSelectionScreen
 import com.nuvio.tv.ui.theme.NuvioComponents
@@ -306,8 +305,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             var hasSelectedProfileThisSession by rememberSaveable { mutableStateOf(false) }
-            var onboardingCompletedThisSession by remember { mutableStateOf(false) }
-            var onboardingProfileSyncInProgress by remember { mutableStateOf(false) }
             val hasSeenAuthQrFlow = remember(appOnboardingDataStore) {
                 appOnboardingDataStore.hasSeenAuthQrOnFirstLaunch.map<Boolean, Boolean?> { it }
             }
@@ -329,9 +326,8 @@ class MainActivity : ComponentActivity() {
             }
 
             LaunchedEffect(hasSeenAuthQrOnFirstLaunch, authState) {
-                if (hasSeenAuthQrOnFirstLaunch == false && authState is AuthState.FullAccount) {
+                if (hasSeenAuthQrOnFirstLaunch == false) {
                     appOnboardingDataStore.setHasSeenAuthQrOnFirstLaunch(true)
-                    onboardingCompletedThisSession = true
                 }
             }
 
@@ -486,52 +482,6 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .fillMaxSize()
                                 .background(NuvioTheme.colors.Background)
-                        )
-                        return@Surface
-                    }
-
-                    if (
-                        hasSeenAuthQrOnFirstLaunch == false &&
-                        authState !is AuthState.FullAccount &&
-                        !onboardingCompletedThisSession
-                    ) {
-                        AuthQrSignInScreen(
-                            onBackPress = {},
-                            onContinue = {
-                                lifecycleScope.launch {
-                                    val shouldRunRemoteOnboardingSync =
-                                        authManager.authState.value is AuthState.FullAccount
-
-                                    if (shouldRunRemoteOnboardingSync) {
-                                        if (onboardingProfileSyncInProgress) return@launch
-                                        onboardingProfileSyncInProgress = true
-                                        val maxAttempts = 3
-                                        var synced = false
-                                        for (attempt in 0 until maxAttempts) {
-                                            val result = profileSyncService.pullFromRemote()
-                                            if (result.isSuccess) {
-                                                synced = true
-                                                break
-                                            }
-                                            if (attempt < maxAttempts - 1) {
-                                                delay(1_000)
-                                            }
-                                        }
-                                        if (!synced) {
-                                            android.util.Log.w(
-                                                "MainActivity",
-                                                "Onboarding profile sync failed after retries; continuing"
-                                            )
-                                        }
-                                    }
-                                    appOnboardingDataStore.setHasSeenAuthQrOnFirstLaunch(true)
-                                    onboardingCompletedThisSession = true
-                                    onboardingProfileSyncInProgress = false
-                                }
-                                if (authManager.authState.value is AuthState.FullAccount) {
-                                    startupSyncService.requestSyncNow()
-                                }
-                            }
                         )
                         return@Surface
                     }

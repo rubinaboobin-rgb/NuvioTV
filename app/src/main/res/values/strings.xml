@@ -1737,8 +1737,10 @@
     <string name="account_loading">Loading\u2026</string>
     <string name="account_sync_description">Sync your library, watch progress, addons, and plugins across devices.</string>
     <string name="account_sync_restart_note">Sync is not real-time across active devices. Restart this device after signing in or to pick up changes made elsewhere.</string>
-    <string name="account_signin_qr_title">Sign In with QR</string>
-    <string name="account_signin_qr_subtitle">Scan a QR code and complete email login on your phone</string>
+    <string name="account_signin_email_title">Sign In</string>
+    <string name="account_signin_email_subtitle">Use your email and password for private sync</string>
+    <string name="account_signin_qr_title">Sign In</string>
+    <string name="account_signin_qr_subtitle">Use your email and password for private sync</string>
     <string name="account_signed_in_label">Signed in</string>
     <string name="account_total_label">Total</string>
     <string name="account_loading_sync">Loading sync data\u2026</string>
@@ -1757,8 +1759,13 @@
     <string name="account_unknown_device">Unknown Device</string>
 
     <string name="auth_signin_title">Sign In</string>
-    <string name="auth_signin_tv_disabled">Email/password entry on TV is disabled. Continue with QR sign in.</string>
-    <string name="auth_signin_qr_btn">Continue with QR</string>
+    <string name="auth_signin_email_password_desc">Use the Supabase account for your private backend.</string>
+    <string name="auth_signin_email_placeholder">Email</string>
+    <string name="auth_signin_password_placeholder">Password</string>
+    <string name="auth_signin_button">Sign In</string>
+    <string name="auth_signin_create_button">Create Account</string>
+    <string name="auth_signin_back_button">Back</string>
+    <string name="auth_signin_working">Please wait...</string>
 
     <string name="auth_qr_title">Sign In With QR</string>
     <string name="auth_qr_account_login">Account Login</string>

@@ -100,8 +100,8 @@ fun AccountSettingsContent(
                 item(key = "account_sign_in_qr") {
                     SettingsActionButton(
                         icon = Icons.Default.VpnKey,
-                        title = stringResource(R.string.account_signin_qr_title),
-                        subtitle = stringResource(R.string.account_signin_qr_subtitle),
+                        title = stringResource(R.string.account_signin_email_title),
+                        subtitle = stringResource(R.string.account_signin_email_subtitle),
                         onClick = onNavigateToAuthQrSignIn
                     )
                 }

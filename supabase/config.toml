@@ -1,0 +1,7 @@
+project_id = "nuviotv-custom-backend"
+
+[functions.tv-logins-exchange]
+verify_jwt = false
+
+[functions.tv-logins-approve]
+verify_jwt = false
