@@ -81,10 +81,10 @@ Important: this implementation approves TV login by handing the browser's curren
 For local builds, create `local.properties`:
 
 ```properties
-SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-SUPABASE_ANON_KEY=YOUR_SUPABASE_PUBLISHABLE_KEY
+NUVIO_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+NUVIO_SUPABASE_ANON_KEY=YOUR_SUPABASE_PUBLISHABLE_KEY
+NUVIO_SUPABASE_FALLBACK_URL=
 AVATAR_PUBLIC_BASE_URL=https://YOUR_PROJECT_REF.supabase.co/storage/v1/object/public/avatars
-SYNC_BACKEND_MANIFEST_URL=
 TV_LOGIN_WEB_BASE_URL=https://your-domain.example/tv-login
 ```
 
@@ -94,21 +94,20 @@ For GitHub Actions, put the same properties into `LOCAL_PROPERTIES_BASE64`:
 base64 -w 0 local.properties
 ```
 
-The app's default selected backend is `hosted`, and `hosted` maps to `SUPABASE_URL` / `SUPABASE_ANON_KEY`. Leaving `SYNC_BACKEND_MANIFEST_URL` blank prevents a remote manifest from switching the app back to another built-in backend.
+The Android build maps `NUVIO_SUPABASE_URL` / `NUVIO_SUPABASE_ANON_KEY` into `BuildConfig.SUPABASE_URL` / `BuildConfig.SUPABASE_ANON_KEY`. Plain `SUPABASE_URL` / `SUPABASE_ANON_KEY` are accepted as legacy local-build fallbacks, but the `NUVIO_` names are the current app config.
 
-The property is still named `SUPABASE_ANON_KEY` because that is what the Android code already reads. For new Supabase projects, put the current `sb_publishable_...` key there.
+For new Supabase projects, put the current `sb_publishable_...` key in `NUVIO_SUPABASE_ANON_KEY`.
 
 ## Optional Nuvio Backend Slot
 
-The app also has a second built-in backend ID named `nuvio`. If you want debug builds to switch between two custom projects, set:
+Older revisions used plain `SUPABASE_URL` / `SUPABASE_ANON_KEY` for the hosted backend slot. After the upstream merge, the active app slot is the `NUVIO_` config:
 
 ```properties
 NUVIO_SUPABASE_URL=https://SECOND_PROJECT.supabase.co
 NUVIO_SUPABASE_ANON_KEY=SECOND_PROJECT_PUBLISHABLE_KEY
-NUVIO_AVATAR_PUBLIC_BASE_URL=https://SECOND_PROJECT.supabase.co/storage/v1/object/public/avatars
 ```
 
-Release builds normally use the `hosted` slot unless the sync backend manifest changes the selected backend.
+`AVATAR_PUBLIC_BASE_URL` is still the avatar base URL property.
 
 ## Avatar Catalog
 
