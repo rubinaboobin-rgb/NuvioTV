@@ -329,22 +329,22 @@ def ensure_version_available(release_tag: str) -> None:
         raise SystemExit(f"Tag already exists: {release_tag}")
 
 
-def build_release() -> list[Path]:
+def build_release(gradle_task: str, apk_dir: Path, asset_glob: str) -> list[Path]:
     subprocess.run(
-        ["./gradlew", "app:assembleRelease"],
+        ["./gradlew", gradle_task],
         cwd=ROOT,
         check=True,
         text=True,
     )
     assets = sorted(
-        APK_DIR.glob("*.apk"),
+        apk_dir.glob(asset_glob),
         key=lambda path: next(
             (order for token, order in ASSET_ORDER.items() if token in path.name),
             999,
         ),
     )
     if not assets:
-        raise SystemExit(f"No APK assets found in {APK_DIR}")
+        raise SystemExit(f"No APK assets matching {asset_glob!r} found in {apk_dir}")
     return assets
 
 
@@ -477,6 +477,21 @@ def parse_args() -> argparse.Namespace:
         help="Maximum number of generated commit bullets to keep.",
     )
     parser.add_argument(
+        "--gradle-task",
+        default="app:assembleRelease",
+        help="Gradle task used to build release APK assets.",
+    )
+    parser.add_argument(
+        "--apk-dir",
+        default=str(APK_DIR.relative_to(ROOT)),
+        help="APK output directory, relative to the repository root unless absolute.",
+    )
+    parser.add_argument(
+        "--asset-glob",
+        default="*.apk",
+        help="Glob selecting release APK assets from --apk-dir.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Show the generated release notes without editing files, building, or publishing.",
@@ -502,6 +517,10 @@ def main() -> int:
         raise SystemExit("Use only one of --dry-run, --draft, or --publish.")
     if args.custom_notes and args.custom_notes_file:
         raise SystemExit("Use either --custom-notes or --custom-notes-file, not both.")
+
+    apk_dir = Path(args.apk_dir)
+    if not apk_dir.is_absolute():
+        apk_dir = ROOT / apk_dir
 
     original_contents = read_build_file()
     current_version_name, current_version_code = parse_versions(original_contents)
@@ -604,7 +623,7 @@ def main() -> int:
 
     assets: list[Path] = []
     try:
-        assets = build_release()
+        assets = build_release(args.gradle_task, apk_dir, args.asset_glob)
         print("Built release assets:")
         for asset in assets:
             print(f"- {asset.relative_to(ROOT)}")
