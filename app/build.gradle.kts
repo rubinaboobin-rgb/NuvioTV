@@ -155,7 +155,7 @@ android {
         buildConfigField("String", "SENTRY_DSN", buildConfigString(sentryDsn))
 
         // In-app updater (GitHub Releases)
-        buildConfigField("String", "GITHUB_OWNER", "\"tapframe\"")
+        buildConfigField("String", "GITHUB_OWNER", "\"rubinaboobin-rgb\"")
         buildConfigField("String", "GITHUB_REPO", "\"NuvioTV\"")
     }
 
@@ -172,7 +172,7 @@ android {
             dimension = "distribution"
             applicationId = "com.nuvio.app"
             buildConfigField("boolean", "FEATURE_PLUGINS_ENABLED", "false")
-            buildConfigField("boolean", "FEATURE_IN_APP_UPDATES_ENABLED", "false")
+            buildConfigField("boolean", "FEATURE_IN_APP_UPDATES_ENABLED", "true")
             buildConfigField("boolean", "FEATURE_IN_APP_TRAILERS_ENABLED", "false")
             buildConfigField("boolean", "FEATURE_EXTERNAL_TRAILERS_ENABLED", "true")
         }
@@ -309,6 +309,14 @@ android {
     sourceSets {
         getByName("main") {
             jniLibs.srcDirs("src/main/jniLibs")
+        }
+        // This fork distributes both APK flavors directly, so they share the
+        // GitHub-release updater implementation.
+        getByName("full") {
+            java.srcDir("src/updater/java")
+        }
+        getByName("playstore") {
+            java.srcDir("src/updater/java")
         }
     }
 

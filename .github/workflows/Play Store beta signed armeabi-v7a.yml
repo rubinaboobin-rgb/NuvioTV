@@ -1,0 +1,90 @@
+name: Build Play Store beta signed armeabi-v7a
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-playstore-beta-armeabi-v7a:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout selected revision
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Prepare local properties
+        env:
+          LOCAL_PROPERTIES_BASE64: ${{ secrets.LOCAL_PROPERTIES_BASE64 }}
+          LOCAL_DEV_PROPERTIES_BASE64: ${{ secrets.LOCAL_DEV_PROPERTIES_BASE64 }}
+        run: |
+          if [ -n "$LOCAL_PROPERTIES_BASE64" ]; then
+            printf '%s' "$LOCAL_PROPERTIES_BASE64" | base64 --decode > local.properties
+          else
+            touch local.properties
+          fi
+
+          if [ -n "$LOCAL_DEV_PROPERTIES_BASE64" ]; then
+            printf '%s' "$LOCAL_DEV_PROPERTIES_BASE64" | base64 --decode > local.dev.properties
+          else
+            touch local.dev.properties
+          fi
+
+      - name: Prepare release signing config
+        env:
+          NUVIO_RELEASE_KEYSTORE_BASE64: ${{ secrets.NUVIO_RELEASE_KEYSTORE_BASE64 }}
+          NUVIO_RELEASE_KEY_ALIAS_SECRET: ${{ secrets.NUVIO_RELEASE_KEY_ALIAS }}
+          NUVIO_RELEASE_KEY_PASSWORD_SECRET: ${{ secrets.NUVIO_RELEASE_KEY_PASSWORD }}
+          NUVIO_RELEASE_STORE_PASSWORD_SECRET: ${{ secrets.NUVIO_RELEASE_STORE_PASSWORD }}
+        run: |
+          missing=()
+          [ -n "$NUVIO_RELEASE_KEYSTORE_BASE64" ] || missing+=("NUVIO_RELEASE_KEYSTORE_BASE64")
+          [ -n "$NUVIO_RELEASE_KEY_ALIAS_SECRET" ] || missing+=("NUVIO_RELEASE_KEY_ALIAS")
+          [ -n "$NUVIO_RELEASE_KEY_PASSWORD_SECRET" ] || missing+=("NUVIO_RELEASE_KEY_PASSWORD")
+          [ -n "$NUVIO_RELEASE_STORE_PASSWORD_SECRET" ] || missing+=("NUVIO_RELEASE_STORE_PASSWORD")
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required signing secret: %s\n' "${missing[@]}"
+            exit 1
+          fi
+
+          key_store="$RUNNER_TEMP/nuviotv-release.jks"
+          printf '%s' "$NUVIO_RELEASE_KEYSTORE_BASE64" | base64 --decode > "$key_store"
+
+          echo "::add-mask::$NUVIO_RELEASE_KEY_PASSWORD_SECRET"
+          echo "::add-mask::$NUVIO_RELEASE_STORE_PASSWORD_SECRET"
+          {
+            echo "NUVIO_RELEASE_STORE_FILE=$key_store"
+            echo "NUVIO_RELEASE_KEY_ALIAS=$NUVIO_RELEASE_KEY_ALIAS_SECRET"
+            echo "NUVIO_RELEASE_KEY_PASSWORD=$NUVIO_RELEASE_KEY_PASSWORD_SECRET"
+            echo "NUVIO_RELEASE_STORE_PASSWORD=$NUVIO_RELEASE_STORE_PASSWORD_SECRET"
+          } >> "$GITHUB_ENV"
+
+      - name: Make Gradle executable
+        run: chmod +x gradlew
+
+      - name: Build signed playstoreRelease armeabi-v7a APK
+        run: ./gradlew :app:assemblePlaystoreRelease
+
+      - name: Collect armeabi-v7a APK
+        run: |
+          mkdir -p build-artifacts
+          find app/build/outputs/apk/playstore/release -maxdepth 1 -type f -name "*armeabi-v7a*.apk" -exec cp {} build-artifacts/ \;
+          ls -lah build-artifacts
+          test -n "$(find build-artifacts -maxdepth 1 -type f -name '*.apk' -print -quit)"
+
+      - name: Upload signed armeabi-v7a APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: playstore-beta-signed-armeabi-v7a
+          path: build-artifacts/*.apk
+          if-no-files-found: error
+          retention-days: 14
