@@ -21,6 +21,7 @@ It covers:
 ## Files
 
 - `supabase/migrations/20260709000000_nuvio_compatible_backend.sql`
+- `supabase/migrations/20260710000000_align_profile_sync.sql`
 - `supabase/functions/tv-logins-exchange/index.ts`
 - `supabase/functions/tv-logins-approve/index.ts`
 - `supabase/web/tv-login.html`
@@ -36,6 +37,10 @@ It covers:
 supabase link --project-ref YOUR_PROJECT_REF
 supabase db push
 ```
+
+If you previously ran only the first migration in the Supabase SQL Editor, run
+`20260710000000_align_profile_sync.sql` next. It updates the profile-sync and
+profile-deletion functions without deleting existing data.
 
 5. Deploy the Edge Functions:
 

@@ -25,7 +25,7 @@ create table if not exists public.linked_devices (
 create table if not exists public.profiles (
   id uuid primary key default extensions.gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  profile_index integer not null check (profile_index between 1 and 20),
+  profile_index integer not null check (profile_index between 1 and 6),
   name text not null default '',
   avatar_color_hex text not null default '#1E88E5',
   uses_primary_addons boolean not null default false,
@@ -957,7 +957,7 @@ as $$
   limit greatest(coalesce(p_limit, 900), 1);
 $$;
 
-create or replace function public.sync_push_profiles(p_profiles jsonb, p_client_max_profiles integer default 5, p_origin_client_id text default null)
+create or replace function public.sync_push_profiles(p_profiles jsonb, p_client_max_profiles integer default 4, p_origin_client_id text default null)
 returns void
 language plpgsql
 security definer
@@ -968,10 +968,11 @@ declare
   item jsonb;
   keep_ids integer[] := '{}';
   idx integer;
+  v_client_max_profiles integer := least(greatest(coalesce(p_client_max_profiles, 4), 1), 6);
 begin
   for item in select * from jsonb_array_elements(coalesce(p_profiles, '[]'::jsonb)) loop
     idx := (item->>'profile_index')::integer;
-    if idx is null or idx < 1 or idx > greatest(coalesce(p_client_max_profiles, 5), 1) then
+    if idx is null or idx < 1 or idx > v_client_max_profiles then
       continue;
     end if;
     keep_ids := array_append(keep_ids, idx);
@@ -998,11 +999,10 @@ begin
           avatar_url = excluded.avatar_url;
   end loop;
 
-  if array_length(keep_ids, 1) is not null then
-    delete from public.profiles
-    where user_id = v_owner
-      and profile_index <> all(keep_ids);
-  end if;
+  delete from public.profiles
+  where user_id = v_owner
+    and profile_index between 1 and v_client_max_profiles
+    and (array_length(keep_ids, 1) is null or profile_index <> all(keep_ids));
 end;
 $$;
 
@@ -1054,6 +1054,7 @@ begin
   delete from public.collections where user_id = v_owner and profile_id = p_profile_id;
   delete from public.home_catalog_settings where user_id = v_owner and profile_id = p_profile_id;
   delete from public.profile_settings_blobs where user_id = v_owner and profile_id = p_profile_id;
+  delete from public.provider_credentials where user_id = v_owner and profile_id = p_profile_id;
   delete from public.profile_pins where user_id = v_owner and profile_index = p_profile_id;
   delete from public.profiles where user_id = v_owner and profile_index = p_profile_id;
 end;
