@@ -28,7 +28,10 @@ EXPECTED_ASSET_NAMES = [
 ]
 VERSION_NAME_RE = re.compile(r'(?m)^(\s*versionName\s*=\s*")([^"]+)(")')
 VERSION_CODE_RE = re.compile(r"(?m)^(\s*versionCode\s*=\s*)(\d+)")
-VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$")
+# Accept conventional three-part versions and a fourth build segment, such as
+# 0.7.16.01. Android uses versionCode for installation ordering; this value is
+# the updater-visible release name.
+VERSION_PATTERN = re.compile(r"^\d+(?:\.\d+){2,3}(?:-[0-9A-Za-z.-]+)?$")
 PREFIX_RE = re.compile(
     r"^(feat|fix|ref|refactor|perf|ui|ux|build|style|docs|test|ci|chore)"
     r"(\([^)]+\))?:\s*",
