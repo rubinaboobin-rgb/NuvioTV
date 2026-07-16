@@ -62,6 +62,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.nuvio.tv.domain.model.ContentType
+import com.nuvio.tv.domain.model.CardDepthSurface
 import com.nuvio.tv.domain.model.MetaPreview
 import com.nuvio.tv.domain.model.PosterShape
 import com.nuvio.tv.ui.theme.NuvioTheme
@@ -106,6 +107,7 @@ fun ContentCard(
     onClick: () -> Unit = {}
 ) {
     val cardShape = remember(posterCardStyle.cornerRadius) { RoundedCornerShape(posterCardStyle.cornerRadius) }
+    val cardDepthStyle = LocalCardDepthStyle.current
     val baseCardWidth = when (item.posterShape) {
         PosterShape.POSTER -> posterCardStyle.width
         PosterShape.LANDSCAPE -> 260.dp
@@ -359,6 +361,11 @@ fun ContentCard(
                     .fillMaxWidth()
                     .height(baseCardHeight)
                     .clip(cardShape)
+                    .nuvioCardDepth(
+                        shape = cardShape,
+                        surface = CardDepthSurface.POSTERS,
+                        style = cardDepthStyle
+                    )
             ) {
                 val isPlaceholderItem = imageUrl?.startsWith("placeholder://") == true
                 if (isPlaceholderItem) {

@@ -191,7 +191,7 @@ fun ClassicHomeContent(
             when (row) {
                 is HomeRow.Catalog -> row.row.stableKey()
                 is HomeRow.CollectionRow -> "collection_${row.collection.id}"
-                is HomeRow.PlaceholderCatalog -> row.catalogKey
+                is HomeRow.PlaceholderCatalog -> row.stableCatalogKey
             }
         }
     }
@@ -438,7 +438,7 @@ fun ClassicHomeContent(
                     when (row) {
                         is HomeRow.Catalog -> row.row.stableKey()
                         is HomeRow.CollectionRow -> "collection_${row.collection.id}"
-                        is HomeRow.PlaceholderCatalog -> row.catalogKey
+                        is HomeRow.PlaceholderCatalog -> row.stableCatalogKey
                     }
                 }
                 val cwDownRequester = firstRowKey?.let { rowEntryFocusRequesters.getOrPut(it) { FocusRequester() } }
@@ -510,7 +510,7 @@ fun ClassicHomeContent(
                         "${r.stableKey()}_$index"
                     }
                     is HomeRow.CollectionRow -> "collection_${item.collection.id}"
-                    is HomeRow.PlaceholderCatalog -> "${item.catalogKey}_$index"
+                    is HomeRow.PlaceholderCatalog -> "${item.stableCatalogKey}_$index"
                 }
             },
             contentType = { _, item ->

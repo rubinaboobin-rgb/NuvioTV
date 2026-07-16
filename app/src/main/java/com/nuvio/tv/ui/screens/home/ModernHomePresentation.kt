@@ -142,7 +142,7 @@ internal fun buildModernHomePresentation(
                                     cachedItem.showImdbRatings == input.showImdbRatings
                                 ) {
                                     cachedItem.carouselItem.let { cached ->
-                                        val stableItemKey = row.stableItemKey(itemIndex, item)
+                                        val stableItemKey = row.stableItemKey(itemIndex)
                                         if (cached.key == stableItemKey) cached
                                         else cached.copy(key = stableItemKey)
                                     }
@@ -157,7 +157,7 @@ internal fun buildModernHomePresentation(
                                         showFullReleaseDate = input.showFullReleaseDate,
                                         showImdbRatings = input.showImdbRatings,
                                         previousCachedItem = cachedItem?.carouselItem
-                                    ).copy(key = row.stableItemKey(itemIndex, item))
+                                    ).copy(key = row.stableItemKey(itemIndex))
                                     rowItemCache[cacheKey] = CachedCarouselItem(
                                         source = item,
                                         useLandscapePosters = input.useLandscapePosters,
@@ -231,11 +231,12 @@ internal fun buildModernHomePresentation(
                         return@forEachIndexed
                     }
                     renderedCatalogRows++
+                    val stableRowKey = homeRow.stableCatalogKey
                     val fakeItemCount = 8
                     val fakeItems = (0 until fakeItemCount).map { i ->
                         val fakeId = "__placeholder_${homeRow.catalogKey}_$i"
                         ModernCarouselItem(
-                            key = "${homeRow.catalogKey}_$i",
+                            key = "${stableRowKey}_$i",
                             title = "",
                             subtitle = null,
                             // Dummy URL triggers shimmer instead of MonochromePosterPlaceholder
@@ -263,7 +264,7 @@ internal fun buildModernHomePresentation(
                         homeRow.catalogName.replaceFirstChar { it.uppercase() }
                     }
                     val placeholderRow = HeroCarouselRow(
-                        key = homeRow.catalogKey,
+                        key = stableRowKey,
                         title = placeholderTitle,
                         globalRowIndex = index,
                         catalogId = homeRow.catalogId,
