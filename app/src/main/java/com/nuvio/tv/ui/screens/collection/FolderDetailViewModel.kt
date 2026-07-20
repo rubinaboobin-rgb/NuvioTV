@@ -267,10 +267,13 @@ class FolderDetailViewModel @Inject constructor(
                 }
                 // Generate placeholder CatalogRow with shimmer items for Modern/Classic follow-layout
                 val placeholderRow = if (useShimmerPlaceholders) {
-                    val (placeholderAddonId, placeholderCatalogId) = when (source) {
-                        is AddonCatalogCollectionSource -> source.addonId to source.catalogId
-                        is TmdbCollectionSource -> "tmdb" to buildTmdbSourceKey(source)
-                        is TraktCollectionSource -> "trakt" to buildTraktSourceKey(source)
+                    val (placeholderAddonId, placeholderCatalogId, placeholderBaseUrl) = when (source) {
+                        is AddonCatalogCollectionSource -> {
+                            val baseUrl = addons.find { it.id == source.addonId }?.baseUrl ?: ""
+                            Triple(source.addonId, source.catalogId, baseUrl)
+                        }
+                        is TmdbCollectionSource -> Triple("tmdb", buildTmdbSourceKey(source), "")
+                        is TraktCollectionSource -> Triple("trakt", buildTraktSourceKey(source), "")
                     }
                     val apiType = rawType.ifBlank { "movie" }
                     val fakeItems = (0 until 8).map { i ->
@@ -292,7 +295,7 @@ class FolderDetailViewModel @Inject constructor(
                     CatalogRow(
                         addonId = placeholderAddonId,
                         addonName = "",
-                        addonBaseUrl = "",
+                        addonBaseUrl = placeholderBaseUrl,
                         catalogId = placeholderCatalogId,
                         catalogName = name,
                         type = com.nuvio.tv.domain.model.ContentType.fromString(apiType),
@@ -403,11 +406,11 @@ class FolderDetailViewModel @Inject constructor(
                     tab.catalogRow
                 } else if (tab.isLoading) {
                     // Generate a placeholder CatalogRow with shimmer items
-                    val (phAddonId, phCatalogId) = when (val src = tab.source) {
-                        is AddonCatalogCollectionSource -> src.addonId to src.catalogId
-                        is TmdbCollectionSource -> "tmdb" to buildTmdbSourceKey(src)
-                        is TraktCollectionSource -> "trakt" to buildTraktSourceKey(src)
-                        else -> "placeholder" to tab.label
+                    val (phAddonId, phCatalogId, phBaseUrl) = when (val src = tab.source) {
+                        is AddonCatalogCollectionSource -> Triple(src.addonId, src.catalogId, "")
+                        is TmdbCollectionSource -> Triple("tmdb", buildTmdbSourceKey(src), "")
+                        is TraktCollectionSource -> Triple("trakt", buildTraktSourceKey(src), "")
+                        else -> Triple("placeholder", tab.label, "")
                     }
                     val apiType = tab.rawType.ifBlank { "movie" }
                     val fakeItems = (0 until 8).map { i ->
@@ -429,7 +432,7 @@ class FolderDetailViewModel @Inject constructor(
                     CatalogRow(
                         addonId = phAddonId,
                         addonName = "",
-                        addonBaseUrl = "",
+                        addonBaseUrl = phBaseUrl,
                         catalogId = phCatalogId,
                         catalogName = tab.label,
                         type = com.nuvio.tv.domain.model.ContentType.fromString(apiType),
@@ -472,6 +475,7 @@ class FolderDetailViewModel @Inject constructor(
                     add(GridItem.SeeAll(
                         catalogId = row.catalogId,
                         addonId = row.addonId,
+                        addonBaseUrl = row.addonBaseUrl,
                         type = row.apiType
                     ))
                 }
@@ -495,6 +499,7 @@ class FolderDetailViewModel @Inject constructor(
                         homeRows = homeRows,
                         catalogRows = allRows,
                         continueWatchingItems = emptyList(),
+                        upcomingItems = emptyList(),
                         useLandscapePosters = state.modernLandscapePostersEnabled,
                         showCatalogTypeSuffix = state.catalogTypeSuffixEnabled,
                         showFullReleaseDate = state.showFullReleaseDate,
