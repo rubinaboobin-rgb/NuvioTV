@@ -74,7 +74,6 @@ class LibraryPreferences @Inject constructor(
             preferences[lastSelectedListKey] = key
         }
     }
-
     fun isInLibrary(itemId: String, itemType: String): Flow<Boolean> {
         return libraryItems.map { items ->
             items.any { item ->
@@ -126,31 +125,6 @@ class LibraryPreferences @Inject constructor(
         profileId: Int = profileManager.activeProfileId.value
     ): List<SavedLibraryItem> {
         return getSyncState(profileId).items
-    }
-
-    /**
-     * Applies the full-library snapshot returned by the custom Supabase backend.
-     *
-     * The deployed backend exposes `sync_pull_library`, rather than upstream's
-     * library-delta RPCs. Keep locally stored items when an unexpectedly empty
-     * remote snapshot is returned so a transient backend failure cannot erase a
-     * user's library before the subsequent full push.
-     */
-    suspend fun mergeRemoteItems(
-        remoteItems: List<SavedLibraryItem>,
-        profileId: Int = profileManager.activeProfileId.value
-    ) {
-        store(profileId).edit { preferences ->
-            val current = preferences.toLibrarySyncState()
-            if (remoteItems.isEmpty() && current.items.isNotEmpty()) return@edit
-
-            val result = LibrarySyncReducer.applySnapshot(
-                state = current,
-                remoteItems = remoteItems,
-                cursorEventId = current.deltaCursorEventId
-            )
-            preferences.writeLibrarySyncState(result.state)
-        }
     }
 
     suspend fun updateLogo(

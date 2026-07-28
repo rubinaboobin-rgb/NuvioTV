@@ -704,7 +704,7 @@ class AccountViewModel @Inject constructor(
         pluginSyncService.pushToRemote()
         addonSyncService.pushToRemote()
         watchProgressSyncService.pushToRemote(profileId)
-        librarySyncService.pushToRemote()
+        librarySyncService.pushToRemote(profileId)
         watchedItemsSyncService.pushToRemote(profileId)
     }
 
@@ -752,12 +752,13 @@ class AccountViewModel @Inject constructor(
                 watchProgressRepository.isSyncingFromRemote = false
 
                 libraryRepository.isSyncingFromRemote = true
-                librarySyncService.pullFromRemote().fold(
-                    onSuccess = { remoteLibraryItems ->
-                        Log.d("AccountViewModel", "pullRemoteData: pulled ${remoteLibraryItems.size} library items")
-                        libraryPreferences.mergeRemoteItems(remoteLibraryItems)
-                        libraryRepository.hasCompletedInitialPull = true
-                        Log.d("AccountViewModel", "pullRemoteData: reconciled local library with ${remoteLibraryItems.size} remote items")
+                librarySyncService.syncFromRemote(profileId).fold(
+                    onSuccess = { result ->
+                        Log.d(
+                            "AccountViewModel",
+                            "pullRemoteData: library sync snapshot=${result.usedSnapshot} " +
+                                "upserts=${result.appliedUpserts} deletes=${result.appliedDeletes}"
+                        )
                     },
                     onFailure = { e ->
                         Log.e("AccountViewModel", "pullRemoteData: failed to pull library items", e)

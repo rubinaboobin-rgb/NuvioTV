@@ -73,15 +73,14 @@ class LibraryRepositoryImpl @Inject constructor(
     @Volatile
     var hasCompletedInitialPull = false
 
-    private fun triggerRemoteSync() {
-        // Skip if already syncing from remote or not authenticated.
-        // Local library changes should not get stranded if the startup pull failed.
+    private fun triggerRemoteSync(profileId: Int) {
         if (isSyncingFromRemote) return
+        if (!hasCompletedInitialPull) return
         if (!authManager.isAuthenticated) return
         syncJob?.cancel()
         syncJob = syncScope.launch {
             delay(500)
-            librarySyncService.pushToRemote()
+            librarySyncService.pushToRemote(profileId)
         }
     }
 
@@ -227,7 +226,7 @@ class LibraryRepositoryImpl @Inject constructor(
                 profileId = profileId
             )
         }
-        triggerRemoteSync()
+        triggerRemoteSync(profileId)
         return TrackingMembershipApplyResult()
     }
 
@@ -291,7 +290,7 @@ class LibraryRepositoryImpl @Inject constructor(
                     profileId = profileId
                 )
             }
-            triggerRemoteSync()
+            triggerRemoteSync(profileId)
         }
 
         val failures = dispatchTrackingMembershipChanges(

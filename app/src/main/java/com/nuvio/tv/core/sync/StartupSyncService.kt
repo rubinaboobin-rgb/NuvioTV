@@ -6,7 +6,6 @@ import com.nuvio.tv.core.auth.AuthManager
 import com.nuvio.tv.core.plugin.PluginManager
 import com.nuvio.tv.core.profile.ProfileManager
 import com.nuvio.tv.data.local.StartupSyncPreferences
-import com.nuvio.tv.data.local.LibraryPreferences
 import com.nuvio.tv.data.local.WatchProgressPreferences
 import com.nuvio.tv.data.repository.AddonRepositoryImpl
 import com.nuvio.tv.data.repository.LibraryRepositoryImpl
@@ -49,7 +48,6 @@ class StartupSyncService @Inject constructor(
     private val addonRepository: AddonRepositoryImpl,
     private val watchProgressRepository: WatchProgressRepositoryImpl,
     private val libraryRepository: LibraryRepositoryImpl,
-    private val libraryPreferences: LibraryPreferences,
     private val watchProgressPreferences: WatchProgressPreferences,
     private val profileManager: ProfileManager,
     private val startupSyncPreferences: StartupSyncPreferences,
@@ -524,12 +522,12 @@ class StartupSyncService @Inject constructor(
                 if (!isTrackingLibrary) {
                     libraryRepository.isSyncingFromRemote = true
                     try {
-                        val remoteLibraryItems = librarySyncService.pullFromRemote().getOrElse { throw it }
-                        libraryPreferences.mergeRemoteItems(remoteLibraryItems)
+                        val result = librarySyncService.syncFromRemote(profileId).getOrElse { throw it }
                         libraryRepository.hasCompletedInitialPull = true
                         Log.d(
                             TAG,
-                            "Library pull completed profile=$profileId items=${remoteLibraryItems.size}"
+                            "Library sync completed profile=$profileId snapshot=${result.usedSnapshot} " +
+                                "upserts=${result.appliedUpserts} deletes=${result.appliedDeletes}"
                         )
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to pull library, continuing with other syncs", e)
@@ -621,12 +619,12 @@ class StartupSyncService @Inject constructor(
 
         libraryRepository.isSyncingFromRemote = true
         try {
-            val remoteLibraryItems = librarySyncService.pullFromRemote().getOrElse { throw it }
-            libraryPreferences.mergeRemoteItems(remoteLibraryItems)
+            val result = librarySyncService.syncFromRemote(profileId).getOrElse { throw it }
             libraryRepository.hasCompletedInitialPull = true
             Log.d(
                 TAG,
-                "Library pull completed profile=$profileId items=${remoteLibraryItems.size}"
+                "Library delta pull completed profile=$profileId snapshot=${result.usedSnapshot} " +
+                    "upserts=${result.appliedUpserts} deletes=${result.appliedDeletes}"
             )
         } catch (e: Exception) {
             libraryRepository.hasCompletedInitialPull = true
