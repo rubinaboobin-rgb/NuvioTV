@@ -144,13 +144,12 @@ class LibraryPreferences @Inject constructor(
             val current = preferences.toLibrarySyncState()
             if (remoteItems.isEmpty() && current.items.isNotEmpty()) return@edit
 
-            val remoteByIdentity = linkedMapOf<String, SavedLibraryItem>()
-            remoteItems.forEach { item ->
-                if (item.id.isNotBlank() && item.type.isNotBlank()) {
-                    remoteByIdentity[librarySyncIdentity(item.id, item.type)] = item
-                }
-            }
-            preferences.writeLibrarySyncState(current.copy(items = remoteByIdentity.values.toList()))
+            val result = LibrarySyncReducer.applySnapshot(
+                state = current,
+                remoteItems = remoteItems,
+                cursorEventId = current.deltaCursorEventId
+            )
+            preferences.writeLibrarySyncState(result.state)
         }
     }
 
