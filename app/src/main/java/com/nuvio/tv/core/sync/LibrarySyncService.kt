@@ -9,7 +9,6 @@ import com.nuvio.tv.domain.model.PosterShape
 import com.nuvio.tv.domain.model.SavedLibraryItem
 import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonArray
@@ -19,7 +18,6 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val TAG = "LibrarySyncService"
-
 private const val PULL_PAGE_SIZE = 500
 
 @Singleton
@@ -30,20 +28,17 @@ class LibrarySyncService @Inject constructor(
     private val profileManager: ProfileManager,
     private val syncClientIdentity: SyncClientIdentity
 ) {
-    private suspend fun <T> withJwtRefreshRetry(block: suspend () -> T): T {
-        return try {
-            block()
-        } catch (e: Exception) {
-            if (!authManager.refreshSessionIfJwtExpired(e)) throw e
-            block()
-        }
+    private suspend fun <T> withJwtRefreshRetry(block: suspend () -> T): T = try {
+        block()
+    } catch (error: Exception) {
+        if (!authManager.refreshSessionIfJwtExpired(error)) throw error
+        block()
     }
 
     suspend fun pushToRemote(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val items = libraryPreferences.getAllItems()
-
             val profileId = profileManager.activeProfileId.value
+            val items = libraryPreferences.getAllItems()
             val params = buildJsonObject {
                 put("p_items", buildJsonArray {
                     items.forEach { item ->
@@ -68,15 +63,12 @@ class LibrarySyncService @Inject constructor(
                 put("p_profile_id", profileId)
                 putSyncOriginClientId(syncClientIdentity)
             }
-            withJwtRefreshRetry {
-                postgrest.rpc("sync_push_library", params)
-            }
-
+            withJwtRefreshRetry { postgrest.rpc("sync_push_library", params) }
             Log.d(TAG, "Pushed ${items.size} library items to remote for profile $profileId")
             Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to push library to remote", e)
-            Result.failure(e)
+        } catch (error: Exception) {
+            Log.e(TAG, "Failed to push library to remote", error)
+            Result.failure(error)
         }
     }
 
@@ -85,26 +77,19 @@ class LibrarySyncService @Inject constructor(
             val profileId = profileManager.activeProfileId.value
             val allItems = mutableListOf<SupabaseLibraryItem>()
             var offset = 0
-
             while (true) {
                 val params = buildJsonObject {
                     put("p_profile_id", profileId)
                     put("p_limit", PULL_PAGE_SIZE)
                     put("p_offset", offset)
                 }
-                val response = withJwtRefreshRetry {
-                    postgrest.rpc("sync_pull_library", params)
+                val page = withJwtRefreshRetry {
+                    postgrest.rpc("sync_pull_library", params).decodeList<SupabaseLibraryItem>()
                 }
-                val page = response.decodeList<SupabaseLibraryItem>()
-                allItems.addAll(page)
-                Log.d(TAG, "pullFromRemote: fetched page at offset=$offset, got ${page.size} items")
-
+                allItems += page
                 if (page.size < PULL_PAGE_SIZE) break
                 offset += PULL_PAGE_SIZE
             }
-
-            Log.d(TAG, "pullFromRemote: fetched ${allItems.size} total library items for profile $profileId")
-
             Result.success(allItems.map { entry ->
                 SavedLibraryItem(
                     id = entry.contentId,
@@ -121,9 +106,9 @@ class LibrarySyncService @Inject constructor(
                     addedAt = entry.addedAt
                 )
             })
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to pull library from remote", e)
-            Result.failure(e)
+        } catch (error: Exception) {
+            Log.e(TAG, "Failed to pull library from remote", error)
+            Result.failure(error)
         }
     }
 }

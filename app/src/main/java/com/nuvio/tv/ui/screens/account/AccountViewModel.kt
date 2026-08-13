@@ -24,6 +24,7 @@ import com.nuvio.tv.core.sync.WatchProgressSyncService
 import com.nuvio.tv.core.sync.WatchedItemsSyncService
 import com.nuvio.tv.core.sync.ProfileSyncService
 import com.nuvio.tv.core.sync.ProfileSettingsSyncService
+import com.nuvio.tv.core.sync.ProviderCredentialSyncService
 import com.nuvio.tv.data.local.LibraryPreferences
 import com.nuvio.tv.data.local.WatchedItemsPreferences
 import com.nuvio.tv.data.local.TraktAuthDataStore
@@ -70,6 +71,7 @@ class AccountViewModel @Inject constructor(
     private val watchedItemsSyncService: WatchedItemsSyncService,
     private val profileSyncService: ProfileSyncService,
     private val profileSettingsSyncService: ProfileSettingsSyncService,
+    private val providerCredentialSyncService: ProviderCredentialSyncService,
     private val pluginManager: PluginManager,
     private val addonRepository: AddonRepositoryImpl,
     private val watchProgressRepository: WatchProgressRepositoryImpl,
@@ -698,6 +700,7 @@ class AccountViewModel @Inject constructor(
         val profileId = profileManager.activeProfileId.value
         profileSyncService.pushToRemote()
         profileSettingsSyncService.pushCurrentProfileToRemote()
+        providerCredentialSyncService.syncFromRemote(profileId)
         pluginSyncService.pushToRemote()
         addonSyncService.pushToRemote()
         watchProgressSyncService.pushToRemote(profileId)
@@ -711,6 +714,7 @@ class AccountViewModel @Inject constructor(
             // if the user switches profiles during this long-running operation.
             val profileId = profileManager.activeProfileId.value
             profileSettingsSyncService.pullCurrentProfileFromRemote()
+            providerCredentialSyncService.syncFromRemote(profileId).getOrElse { throw it }
             pluginManager.isSyncingFromRemote = true
             val remotePlugins = pluginSyncService.getRemoteRepoUrls().getOrElse { throw it }
             pluginManager.reconcileWithRemoteRepoUrls(
@@ -760,6 +764,7 @@ class AccountViewModel @Inject constructor(
                         libraryRepository.hasCompletedInitialPull = true
                     }
                 )
+                libraryRepository.hasCompletedInitialPull = true
                 libraryRepository.isSyncingFromRemote = false
 
                 val watchedItemsResult = watchedItemsSyncService.syncDeltaFromRemote(profileId).getOrElse { throw it }
