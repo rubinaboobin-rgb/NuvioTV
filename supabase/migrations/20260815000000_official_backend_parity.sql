@@ -1488,7 +1488,7 @@ as $$
   from public.user_session_devices d
   join auth.sessions s on s.id = d.session_id and s.user_id = d.user_id
   where d.user_id = auth.uid() and (s.not_after is null or s.not_after > now())
-  order by is_current desc, last_active_at desc;
+  order by 9 desc, 3 desc;
 $$;
 
 create or replace function public.register_current_device(
