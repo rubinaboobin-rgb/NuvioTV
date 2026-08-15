@@ -9,6 +9,8 @@ create table if not exists nuvio_private.instance_settings (
   updated_at timestamptz not null default now()
 );
 
+alter table nuvio_private.instance_settings enable row level security;
+
 insert into nuvio_private.instance_settings(key, value)
 values ('default_catalog_url', 'https://catalog.nuvio.tv/manifest.json')
 on conflict (key) do nothing;
