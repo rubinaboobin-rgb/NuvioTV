@@ -190,6 +190,7 @@ class ModernCarouselRowBuildCache {
     var upcomingItems: List<ContinueWatchingItem> = emptyList()
     var upcomingTitle: String = ""
     var upcomingUseLandscapePosters: Boolean = false
+    var upcomingShowImdbRatings: Boolean = true
     var upcomingRow: HeroCarouselRow? = null
     internal val catalogRows = java.util.concurrent.ConcurrentHashMap<String, ModernCatalogRowBuildCacheEntry>()
     internal val collectionRows = java.util.concurrent.ConcurrentHashMap<String, ModernCollectionRowBuildCacheEntry>()
@@ -338,6 +339,7 @@ internal fun buildContinueWatchingItem(
                 yearText = extractYearOrRange(item.releaseInfo),
                 secondaryHighlightText = secondaryHighlightText,
                 imdbText = item.episodeImdbRating
+                    ?.takeIf { showImdbRatings }
                     ?.let { String.format("%.1f", it) },
                 genres = item.genres.asStable(),
                 poster = item.progress.poster,
@@ -368,6 +370,7 @@ internal fun buildContinueWatchingItem(
                 yearText = extractYearOrRange(item.info.releaseInfo),
                 secondaryHighlightText = secondaryHighlightText,
                 imdbText = item.info.imdbRating
+                    ?.takeIf { showImdbRatings }
                     ?.let { String.format("%.1f", it) },
                 genres = item.info.genres.asStable(),
                 poster = item.info.poster,
@@ -480,6 +483,7 @@ internal fun buildCatalogItem(
         yearText = extractYearText(item.type, item.releaseInfo, item.released, showFullReleaseDate),
         runtimeText = formatHeroRuntime(item.runtime),
         imdbText = item.imdbRating
+            ?.takeIf { showImdbRatings }
             ?.let { String.format("%.1f", it) },
         ageRatingText = item.ageRating,
         statusText = item.status,

@@ -94,7 +94,8 @@ internal fun buildModernHomePresentation(
                 cache.upcomingRow != null &&
                     cache.upcomingItems == input.upcomingItems &&
                     cache.upcomingTitle == strUpcomingSectionTitle &&
-                    cache.upcomingUseLandscapePosters == input.useLandscapePosters
+                    cache.upcomingUseLandscapePosters == input.useLandscapePosters &&
+                    cache.upcomingShowImdbRatings == input.showImdbRatings
             val upcomingRow = if (reuseUpcomingRow) {
                 checkNotNull(cache.upcomingRow)
             } else {
@@ -117,6 +118,7 @@ internal fun buildModernHomePresentation(
             cache.upcomingItems = input.upcomingItems
             cache.upcomingTitle = strUpcomingSectionTitle
             cache.upcomingUseLandscapePosters = input.useLandscapePosters
+            cache.upcomingShowImdbRatings = input.showImdbRatings
             cache.upcomingRow = upcomingRow
             add(upcomingRow)
         } else {

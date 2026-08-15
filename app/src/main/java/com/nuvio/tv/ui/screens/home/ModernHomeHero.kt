@@ -447,7 +447,7 @@ private fun HeroTitleContent(
         val statusBadge = secondaryMeta.status
         val secondaryDetails = secondaryMeta.details
         val hasSecondaryBadge = ageRatingBadge != null || statusBadge != null
-        val hasImdbRatingForLayout = !preview.imdbText.isNullOrBlank()
+        val hasImdbRatingForLayout = showImdbRatings && !preview.imdbText.isNullOrBlank()
         val reserveImdbInPrimary = !preview.isSeries && !hasSecondaryBadge && hasImdbRatingForLayout
         val reserveImdbInPrimaryWithHighlight = reserveImdbInPrimary && secondaryHighlightText == null
         val reserveImdbInSecondary = hasImdbRatingForLayout &&
