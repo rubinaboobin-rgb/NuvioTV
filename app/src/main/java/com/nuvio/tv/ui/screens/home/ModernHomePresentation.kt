@@ -106,6 +106,7 @@ internal fun buildModernHomePresentation(
                         buildContinueWatchingItem(
                             item = item,
                             useLandscapePosters = input.useLandscapePosters,
+                            showImdbRatings = input.showImdbRatings,
                             airsDateTemplate = strAirsDate,
                             upcomingLabel = strUpcoming,
                             context = localizedContext

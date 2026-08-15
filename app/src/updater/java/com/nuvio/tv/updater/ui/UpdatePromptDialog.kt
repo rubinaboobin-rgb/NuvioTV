@@ -94,7 +94,7 @@ fun UpdatePromptDialog(
     onIgnore: () -> Unit,
     onOpenUnknownSources: () -> Unit
 ) {
-    if (!state.showDialog) return
+    if (!state.showBanner) return
 
     val closeFocusRequester = remember { FocusRequester() }
     val primaryFocusRequester = remember { FocusRequester() }
@@ -504,7 +504,7 @@ fun UpdatePromptDialog(
         }
     }
 
-    LaunchedEffect(state.showDialog, hasPrimaryAction, state.downloadedApkPath, state.showUnknownSourcesDialog, state.isUpdateAvailable, state.update?.notes) {
+    LaunchedEffect(state.showBanner, hasPrimaryAction, state.downloadedApkPath, state.showUnknownSourcesDialog, state.isUpdateAvailable, state.update?.notes) {
         // Defer focus until after the dialog subtree has been committed.
         withFrameNanos { }
 
