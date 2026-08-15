@@ -65,6 +65,8 @@ bugs/
 avatars/
 logs
 AGENTS.md
+!/supabase/avatars/
+!/supabase/avatars/**
 docs/*
 !docs/custom-backend.md
 status-page/

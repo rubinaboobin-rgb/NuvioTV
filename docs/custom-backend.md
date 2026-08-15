@@ -22,6 +22,8 @@ It covers:
 
 - `supabase/migrations/20260709000000_nuvio_compatible_backend.sql`
 - `supabase/migrations/20260710000000_align_profile_sync.sql`
+- `supabase/migrations/20260815000000_official_backend_parity.sql`
+- `supabase/avatars/`
 - `supabase/functions/tv-logins-exchange/index.ts`
 - `supabase/functions/tv-logins-approve/index.ts`
 - `supabase/web/tv-login.html`
@@ -41,6 +43,12 @@ supabase db push
 If you previously ran only the first migration in the Supabase SQL Editor, run
 `20260710000000_align_profile_sync.sql` next. It updates the profile-sync and
 profile-deletion functions without deleting existing data.
+
+Then run `20260815000000_official_backend_parity.sql`. It is additive: it
+preserves your existing accounts and data while adding the current official
+library delta API, account backup/restore, tracker data tables, device-session
+records, activity events, default catalog configuration, and the official
+avatar catalog metadata.
 
 5. Deploy the Edge Functions:
 
@@ -116,7 +124,16 @@ NUVIO_SUPABASE_ANON_KEY=SECOND_PROJECT_PUBLISHABLE_KEY
 
 ## Avatar Catalog
 
-The migration creates a public `avatars` storage bucket and an `avatar_catalog` table. Upload images into the bucket, then insert catalog rows:
+The parity migration creates public `avatars` and `covers` buckets and seeds
+the current official avatar catalog. It also includes the matching 41 PNGs in
+`supabase/avatars/`.
+
+After applying the migration, open **Supabase Dashboard -> Storage -> avatars**
+and upload all PNGs from `supabase/avatars/` into the root of that bucket. Do
+not put them in a subfolder: the catalog paths are bare file names.
+
+To add your own avatar after that, upload it to the same bucket and insert a
+catalog row:
 
 ```sql
 insert into public.avatar_catalog (id, display_name, storage_path, category, sort_order, bg_color)
@@ -141,3 +158,17 @@ Continue Watching uses:
 - `sync_delete_watch_progress`
 
 Watched completion badges use the equivalent `watched_items` and `watched_item_events` tables/functions.
+
+Library sync uses the equivalent official delta surface after the parity
+migration:
+
+- `library_item_events`
+- `sync_push_library_items`
+- `sync_delete_library_items`
+- `sync_pull_library_delta`
+- `sync_get_library_delta_cursor`
+
+`sync_export_account_backup` and `sync_restore_account_backup` now use the
+official `nuvio_account_backup` version 1 format. Backups intentionally omit
+passwords, sessions, linked devices, PIN hashes, provider credentials, tracker
+tokens, and login-session data.
