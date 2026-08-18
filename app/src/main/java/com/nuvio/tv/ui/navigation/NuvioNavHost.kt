@@ -16,7 +16,6 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.nuvio.tv.BuildConfig
 import com.nuvio.tv.core.build.AppFeaturePolicy
 import com.nuvio.tv.domain.model.ExperienceMode
 import com.nuvio.tv.ui.screens.CatalogSeeAllScreen
@@ -727,6 +726,11 @@ fun NuvioNavHost(
                     nullable = true
                     defaultValue = null
                 },
+                navArgument("cloudSessionToken") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
                 navArgument("launchStartedAtMs") {
                     type = NavType.StringType
                     nullable = true
@@ -1047,10 +1051,14 @@ fun NuvioNavHost(
                             contentType = "cloud",
                             contentName = info.item.name,
                             videoId = "${info.item.stableKey}:${info.file.stableKey}",
+                            season = 1,
+                            episode = info.sequenceIndex + 1,
+                            episodeTitle = filename,
                             filename = filename,
                             videoSize = info.videoSizeBytes,
                             addonName = info.item.providerName,
-                            streamDescription = info.item.name
+                            streamDescription = info.item.name,
+                            cloudSessionToken = info.sessionToken
                         )
                     )
                 }

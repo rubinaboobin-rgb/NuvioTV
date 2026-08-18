@@ -54,7 +54,6 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.nuvio.tv.domain.model.AuthState
 import androidx.compose.ui.res.stringResource
-import com.nuvio.tv.BuildConfig
 import com.nuvio.tv.R
 
 @Composable
