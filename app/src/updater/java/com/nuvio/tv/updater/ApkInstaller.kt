@@ -30,7 +30,7 @@ object ApkInstaller {
         }
     }
 
-    fun launchInstall(context: Context, apkFile: File) {
+    fun launchInstall(context: Context, apkFile: File): Result<Unit> = runCatching {
         val authority = "${BuildConfig.APPLICATION_ID}.fileprovider"
         val uri = FileProvider.getUriForFile(context, authority, apkFile)
 

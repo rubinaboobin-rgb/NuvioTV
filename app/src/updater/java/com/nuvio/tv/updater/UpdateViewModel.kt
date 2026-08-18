@@ -239,7 +239,15 @@ class UpdateViewModel @Inject constructor(
         }
 
         _uiState.update { it.copy(showUnknownSourcesDialog = false) }
-        ApkInstaller.launchInstall(context, apkFile)
+        ApkInstaller.launchInstall(context, apkFile).onFailure { error ->
+            _uiState.update {
+                it.copy(
+                    showBanner = true,
+                    errorMessage = error.message
+                        ?: context.getString(R.string.update_error_install_failed)
+                )
+            }
+        }
     }
 
     fun openUnknownSourcesSettings() {
