@@ -114,6 +114,18 @@ private fun PlayerRuntimeController.onAudioOutputRouteMaybeChanged(
             return@launch
         }
 
+        // Do not tear down a paused stream just because the output device changed.
+        // Android can reroute the existing paused AudioTrack; if the new route
+        // rejects the current encoded format, the normal audio-track PCM fallback
+        // will rebuild at resume time with the saved position.
+        if (userPausedManually) {
+            Log.i(
+                PlayerRuntimeController.TAG,
+                "Bluetooth media route changed while manually paused; deferring player reinitialization"
+            )
+            return@launch
+        }
+
         val positionMs = _exoPlayer?.currentPosition?.coerceAtLeast(0L) ?: 0L
         Log.i(
             PlayerRuntimeController.TAG,
