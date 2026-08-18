@@ -86,7 +86,6 @@ private fun PlayerRuntimeController.onAudioOutputRouteMaybeChanged(
         delay(AUDIO_ROUTE_CHANGE_DEBOUNCE_MS)
         if (isReleasingPlayer) return@launch
 
-        val oldRoute = currentAudioOutputRoute
         val newRoute = AudioOutputRouteDetector.detect(context)
         if (newRoute != null) {
             currentAudioOutputRoute = newRoute
@@ -96,42 +95,12 @@ private fun PlayerRuntimeController.onAudioOutputRouteMaybeChanged(
             applyStoredAudioDelayForCurrentRouteIfEnabled()
         }
 
-        // Bluetooth ↔ non-Bluetooth requires a different sink capability policy
-        // (PCM-only vs passthrough). Rebuild Exo so AudioCapabilities pin + decoder path match.
-        if (isUsingMpvEngine()) {
-            // MPV uses its own audio device path; only refresh delay/route metadata above.
-            return@launch
-        }
-        if (_exoPlayer == null) return@launch
-
-        val wasBluetooth = oldRoute?.isBluetooth == true
-        val isBluetooth = (newRoute ?: currentAudioOutputRoute)?.isBluetooth == true
-        if (wasBluetooth == isBluetooth) {
-            Log.d(
-                PlayerRuntimeController.TAG,
-                "Audio route Bluetooth state unchanged ($isBluetooth) after device $reason"
-            )
-            return@launch
-        }
-
-        // Do not tear down a paused stream just because the output device changed.
-        // Android can reroute the existing paused AudioTrack; if the new route
-        // rejects the current encoded format, the normal audio-track PCM fallback
-        // will rebuild at resume time with the saved position.
-        if (userPausedManually) {
-            Log.i(
-                PlayerRuntimeController.TAG,
-                "Bluetooth media route changed while manually paused; deferring player reinitialization"
-            )
-            return@launch
-        }
-
-        val positionMs = _exoPlayer?.currentPosition?.coerceAtLeast(0L) ?: 0L
-        Log.i(
+        // Android can reroute the existing AudioTrack without destroying playback.
+        // Player initialization selects PCM when Bluetooth is already active, and
+        // audio-track failures retain the normal PCM recovery path.
+        Log.d(
             PlayerRuntimeController.TAG,
-            "Bluetooth media route changed $wasBluetooth → $isBluetooth after device $reason; " +
-                "reinitializing player for PCM/passthrough policy (pos=${positionMs}ms)"
+            "Audio route refreshed after device $reason; keeping the current player"
         )
-        scheduleDeferredPlayerReinitialize(fromPositionMs = positionMs)
     }
 }
