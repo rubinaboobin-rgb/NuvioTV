@@ -279,7 +279,7 @@ class SearchViewModel @Inject constructor(
                 kotlinx.coroutines.delay(LIVE_SEARCH_DEBOUNCE_MS)
                 performSearch(query)
             }
-        } else {
+        } else if (trimmed.length < MIN_SEARCH_QUERY_LENGTH) {
             // Emptying the field has to retire the submitted query too. Leaving it set kept the
             // screen in its results state with nothing to show, instead of falling back to recent
             // searches, until the screen was rebuilt by navigating away and back.

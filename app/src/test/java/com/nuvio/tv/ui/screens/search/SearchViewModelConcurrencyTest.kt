@@ -98,7 +98,8 @@ class SearchViewModelConcurrencyTest {
         val viewModel = newViewModel(
             addonRepository = GatedAddonRepository(addon, CompletableDeferred(Unit)),
             catalogRepository = ImmediateCatalogRepository(addon),
-            history = history
+            history = history,
+            liveSearchEnabled = true
         )
 
         viewModel.onEvent(SearchEvent.QueryChanged("Deep Cover"))
@@ -112,7 +113,8 @@ class SearchViewModelConcurrencyTest {
     private fun newViewModel(
         addonRepository: AddonRepository,
         catalogRepository: CatalogRepository,
-        history: SearchHistoryDataStore = mockk(relaxed = true)
+        history: SearchHistoryDataStore = mockk(relaxed = true),
+        liveSearchEnabled: Boolean = false
     ): SearchViewModel {
         val layoutPreferences = mockk<LayoutPreferenceDataStore>()
         every { layoutPreferences.discoverLocation } returns flowOf(com.nuvio.tv.domain.model.DiscoverLocation.OFF)
@@ -123,6 +125,7 @@ class SearchViewModelConcurrencyTest {
         every { layoutPreferences.posterCardCornerRadiusDp } returns flowOf(12)
         every { layoutPreferences.catalogTypeSuffixEnabled } returns flowOf(true)
         every { layoutPreferences.hideUnreleasedContent } returns flowOf(false)
+        every { layoutPreferences.liveSearchEnabled } returns flowOf(liveSearchEnabled)
 
         every { history.recentSearches } returns flowOf(emptyList())
 
