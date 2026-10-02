@@ -114,6 +114,7 @@ class LayoutPreferenceDataStore @Inject constructor(
     private val preferExternalMetaAddonDetailKey = booleanPreferencesKey("prefer_external_meta_addon_detail")
     private val modernHeroFullScreenBackdropKey = booleanPreferencesKey("modern_hero_full_screen_backdrop")
     private val hideUnreleasedContentKey = booleanPreferencesKey("hide_unreleased_content")
+    private val liveSearchEnabledKey = booleanPreferencesKey("live_search_enabled")
     private val showFullReleaseDateKey = booleanPreferencesKey("show_full_release_date")
     private val memoryOnlyVerticalScrollKey = booleanPreferencesKey("memory_only_vertical_scroll")
     private val smoothBringIntoViewEnabledKey = booleanPreferencesKey("smooth_bring_into_view_enabled")
@@ -380,6 +381,10 @@ class LayoutPreferenceDataStore @Inject constructor(
 
     val hideUnreleasedContent: Flow<Boolean> = profileFlow { prefs ->
         prefs[hideUnreleasedContentKey] ?: false
+    }
+
+    val liveSearchEnabled: Flow<Boolean> = profileFlow { prefs ->
+        prefs[liveSearchEnabledKey] ?: false
     }
 
     val showFullReleaseDate: Flow<Boolean> = profileFlow { prefs ->
@@ -751,6 +756,12 @@ class LayoutPreferenceDataStore @Inject constructor(
     suspend fun setHideUnreleasedContent(enabled: Boolean) {
         store().edit { prefs ->
             prefs[hideUnreleasedContentKey] = enabled
+        }
+    }
+
+    suspend fun setLiveSearchEnabled(enabled: Boolean) {
+        store().edit { prefs ->
+            prefs[liveSearchEnabledKey] = enabled
         }
     }
 

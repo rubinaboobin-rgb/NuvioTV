@@ -25,6 +25,7 @@ data class SearchUiState(
     val query: String = "",
     val submittedQuery: String = "",
     val isSearching: Boolean = false,
+    val liveSearchEnabled: Boolean = false,
     val error: String? = null,
     val catalogRows: List<CatalogRow> = emptyList(),
     val installedAddons: List<Addon> = emptyList(),

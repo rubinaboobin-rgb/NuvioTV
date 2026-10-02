@@ -87,6 +87,7 @@ class SearchViewModel @Inject constructor(
     private var pendingCatalogResponses = 0
     private var revealBatchAfterNextDiscoverFetch = false
     private var hideUnreleasedContent = false
+    private var liveSearchEnabled = false
 
     private companion object {
         const val DISCOVER_INITIAL_LIMIT = 100
@@ -165,6 +166,16 @@ class SearchViewModel @Inject constructor(
             layoutPreferenceDataStore.hideUnreleasedContent.collectLatest { enabled ->
                 hideUnreleasedContent = enabled
                 scheduleCatalogRowsUpdate()
+            }
+        }
+        viewModelScope.launch {
+            layoutPreferenceDataStore.liveSearchEnabled.distinctUntilChanged().collectLatest { enabled ->
+                liveSearchEnabled = enabled
+                _uiState.update { it.copy(liveSearchEnabled = enabled) }
+                if (!enabled) {
+                    liveSearchJob?.cancel()
+                    cancelSearchRun()
+                }
             }
         }
         viewModelScope.launch {
@@ -263,7 +274,7 @@ class SearchViewModel @Inject constructor(
         // every enabled addon catalog.
         liveSearchJob?.cancel()
         val trimmed = query.trim()
-        if (trimmed.length >= MIN_SEARCH_QUERY_LENGTH) {
+        if (liveSearchEnabled && trimmed.length >= MIN_SEARCH_QUERY_LENGTH) {
             liveSearchJob = viewModelScope.launch {
                 kotlinx.coroutines.delay(LIVE_SEARCH_DEBOUNCE_MS)
                 performSearch(query)

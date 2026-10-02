@@ -908,6 +908,8 @@
     <string name="layout_catalog_type_sub">Show type suffix next to catalog name (Movie/Series).</string>
     <string name="layout_hide_unreleased">Hide Unreleased Content</string>
     <string name="layout_hide_unreleased_sub">Hide movies and shows that haven\'t been released yet.</string>
+    <string name="layout_live_search">Search while typing</string>
+    <string name="layout_live_search_sub">Start searching automatically after you pause typing.</string>
     <string name="layout_section_detail">Detail Page</string>
     <string name="layout_section_detail_desc">Settings for the detail and episode screens.</string>
     <string name="layout_section_imdb_ratings">IMDb ratings</string>

@@ -327,8 +327,14 @@ fun SearchScreen(
     LaunchedEffect(isDiscoverMode) {
         if (isDiscoverMode) viewModel.ensureDiscoverLoaded()
     }
-    val hasPendingUnsubmittedQuery = remember(isDiscoverMode, trimmedQuery, trimmedSubmittedQuery) {
+    val hasPendingUnsubmittedQuery = remember(
+        isDiscoverMode,
+        trimmedQuery,
+        trimmedSubmittedQuery,
+        uiState.liveSearchEnabled
+    ) {
         !isDiscoverMode &&
+            uiState.liveSearchEnabled &&
             trimmedQuery.length >= MIN_SEARCH_QUERY_LENGTH &&
             trimmedQuery != trimmedSubmittedQuery
     }
